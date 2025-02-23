@@ -5,6 +5,7 @@ import os
 import httpx
 import re
 
+
 class API:
 
     client: httpx.AsyncClient = None
@@ -71,25 +72,30 @@ class API:
             raise RuntimeError("Auth link should be loaded first")
         auth_link = self.links["auth"]
         # authorize using itmo id
-        resp = await client.post(
-            auth_link,
-            headers=self.headers,
-            data={
-                "username": email,
-                "password": password,
-                "rememberMe": "on",
-                "credentialId": "",
-            },
-            follow_redirects=True,
-        )
-        if resp.status_code == 302:
-            self.authorized = True
-            cookies.update(resp.cookies)
-            resp = await client.get(resp.headers["Location"], headers=self.headers)
-            cookies.update(resp.cookies)
-            nonce = int(resp.request.url.query.rsplit(b":")[-1].decode())
-            await self._update_links(nonce)
-        return self.authorized
+        try:
+            resp = await client.post(
+                auth_link,
+                headers=self.headers,
+                data={
+                    "username": email,
+                    "password": password,
+                    "rememberMe": "on",
+                    "credentialId": "",
+                },
+                follow_redirects=True,
+            )
+            if resp.status_code == 302:
+                self.authorized = True
+                cookies.update(resp.cookies)
+                resp = await client.get(resp.headers["Location"], headers=self.headers)
+                cookies.update(resp.cookies)
+                nonce = int(resp.request.url.query.rsplit(b":")[-1].decode())
+                await self._update_links(nonce)
+            else:
+                return {"success": False, "message": "Invalid email or password"}
+        except (httpx.ReadTimeout, httpx.ConnectError):
+            return {"success": False, "message": "Got banned. Use VPN or wait 5-10 minutes."}
+        return {"success": True}
 
     async def update_links(self):
         client = self.client
