@@ -122,6 +122,17 @@ class API:
             f"https://isu.ifmo.ru/pls/apex/f?p=2143:15:{nonce}::NO::SCH,SCH_POTOK_ID,SCH_TYPE:1,{{potok_id}},5"
         )
 
+    async def check_auth(self) -> bool:
+        client = self.client
+        resp = await client.get(
+            "https://isu.ifmo.ru/pls/apex/f?p=2143:1:123", headers=self.headers
+        )
+        if "LOGIN" not in resp.headers["Location"]:
+            nonce = int(resp.headers["Location"].rstrip(":").rsplit(":")[-1])
+            await self._update_links(nonce)
+            return True
+        return False
+
     async def get_potok_list(self) -> dict:
         if "potok_list" not in self.links:
             await self.update_links()
