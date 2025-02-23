@@ -17,7 +17,13 @@ class API:
         self.faker = Faker()
         self.links = {}
         if not headers:
-            self.headers = {"User-Agent": self.faker.user_agent()}
+            self.headers = {
+                "User-Agent": self.faker.user_agent(),
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "ru-RU,ru;q=0.9",
+                "Priority": "u=0, i",
+            }
         else:
             self.headers = headers
         self.client = httpx.AsyncClient(headers=self.headers)
