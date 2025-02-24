@@ -5,7 +5,8 @@ import re
 import logging
 from time import sleep
 from itmostalk.api import API
-from itmostalk.tui import ITMOStalkApp
+from itmostalk.tui.app import ITMOStalkApp
+import asyncio
 
 logging.basicConfig(
     format="%(levelname)s [%(asctime)s] %(name)s - %(message)s",
@@ -22,6 +23,7 @@ HEADERS = {
     "Priority": "u=0, i",
 }
 
+
 async def main():
     app = ITMOStalkApp()
     await app.run_async()
@@ -36,4 +38,4 @@ async def _main():
         await api.auth(input(), input())
         await api.save_cookies()
         await asyncio.sleep(3)
-    await api.update_links()
+    print(await api.check_auth())
