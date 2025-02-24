@@ -7,7 +7,7 @@ from textual.widgets import Button, ContentSwitcher, Footer, Header, Label, Inpu
 from textual.app import Binding
 
 
-class SelectGroupsScreen(Container):
+class SelectGroupsContainer(Container):
 
     def compose(self) -> ComposeResult:
         yield TreeSelectionList({"test": [("qwe", 1), ("asd", 2)]}, id="selection-list")
@@ -40,20 +40,7 @@ class MainScreen(Screen):
                 yield Label("->", classes="step-arrow")
                 yield Label("4", classes="step", id="step4")
         with ContentSwitcher(id="contentswitcher", initial="screen1"):
-            yield SelectGroupsScreen(id="screen1")
-        yield Footer()
-
-        with Header():
-            with Horizontal(id="progress-steps"):
-                yield Label("1", classes="first step", id="step1")
-                yield Label("->", classes="step-arrow")
-                yield Label("2", classes="step", id="step2")
-                yield Label("->", classes="step-arrow")
-                yield Label("3", classes="step", id="step3")
-                yield Label("->", classes="step-arrow")
-                yield Label("4", classes="step", id="step4")
-        with ContentSwitcher(id="contentswitcher", initial="screen1"):
-            yield SelectGroupsScreen(id="screen1")
+            yield SelectGroupsContainer(id="screen1")
         yield Footer()
 
 
