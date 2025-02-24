@@ -3,7 +3,8 @@ from textual.widgets import SelectionList, Button, Label
 from textual.containers import Horizontal
 from textual.message import Message
 
-class Step(Label, can_focus=True):
+
+class Step(Label):
     pass
 
 
@@ -15,18 +16,30 @@ class Stepper(Horizontal):
         }
     """
     steps: list[str] = None
-    
+
     class StepChanged(Message):
         pass
-    def __init__(self, steps: list[str], name = None, id = None, classes = None, disabled = False, markup = True):
+
+    def __init__(
+        self,
+        steps: list[str],
+        name=None,
+        id=None,
+        classes=None,
+        disabled=False,
+        markup=True,
+    ):
         self.steps = list(steps)
-        super().__init__(name=name, id=id, classes=classes, disabled=disabled, markup=markup)
-    
+        super().__init__(
+            name=name, id=id, classes=classes, disabled=disabled, markup=markup
+        )
+
     def compose(self) -> ComposeResult:
         for i in range(len(self.steps) - 1):
             yield Step(self.steps[i])
             yield Label("->", classes="step-arrow")
         yield Step(self.steps[-1])
+
 
 class TreeSelectionList(SelectionList):
     groups: dict = None
