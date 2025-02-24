@@ -1,4 +1,4 @@
-from itmostalk.tui.widgets import TreeSelectionList
+from itmostalk.tui.widgets import TreeSelectionList, Stepper
 
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Center
@@ -21,7 +21,6 @@ class MainScreen(Screen):
     CSS = """
         #progress-steps {
             align: center top;
-            background: #f00;
         }
         .step-arrow {
             margin-left: 10;
@@ -30,15 +29,9 @@ class MainScreen(Screen):
     """
 
     def compose(self):
-        with Header():
+        with Header() as header:
             with Horizontal(id="progress-steps"):
-                yield Label("1", classes="first step", id="step1")
-                yield Label("->", classes="step-arrow")
-                yield Label("2", classes="step", id="step2")
-                yield Label("->", classes="step-arrow")
-                yield Label("3", classes="step", id="step3")
-                yield Label("->", classes="step-arrow")
-                yield Label("4", classes="step", id="step4")
+                yield Stepper(["1", "2", "3"], id="progress-steps")
         with ContentSwitcher(id="contentswitcher", initial="screen1"):
             yield SelectGroupsContainer(id="screen1")
         yield Footer()
