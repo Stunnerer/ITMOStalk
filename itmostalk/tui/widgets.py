@@ -1,24 +1,26 @@
 from textual.app import App, ComposeResult
-from textual.widgets import SelectionList, Button, Label
-from textual.containers import Horizontal
+from textual.widgets import SelectionList, Button, Label, ContentSwitcher, TabbedContent
+from textual.containers import Horizontal, Container
 from textual.message import Message
+from textual.widget import Widget
+from textual.widgets.selection_list import Selection
 
 
-class Step(Label):
-    pass
-
-
-class Stepper(Horizontal):
-    CSS = """
+class StepperHeader(Horizontal):
+    DEFAULT_CSS = """
+        StepperHeader {
+            background: $panel;
+            dock: top;
+            width: 100%;
+            height: 1;
+            align-horizontal: center;
+        }
         .step-arrow {
-            margin-left: 10%;
-            margin-right: 10%;
+            margin-left: 10;
+            margin-right: 10;
         }
     """
     steps: list[str] = None
-
-    class StepChanged(Message):
-        pass
 
     def __init__(
         self,
@@ -39,6 +41,26 @@ class Stepper(Horizontal):
             yield Step(self.steps[i])
             yield Label("->", classes="step-arrow")
         yield Step(self.steps[-1])
+
+
+class StepperFooter(Horizontal):
+    DEFAULT_CSS = """
+        StepperFooter {
+            dock: bottom;
+            width: 100%;
+            height: 3;
+        }
+        .button-next {
+            dock: right;
+        }
+        .button-prev {
+            dock: left;
+        }
+    """
+
+    def compose(self) -> ComposeResult:
+        yield Button("< Prev", classes="button-prev")
+        yield Button("Next >", classes="button-next")
 
 
 class TreeSelectionList(SelectionList):
