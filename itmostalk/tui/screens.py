@@ -4,26 +4,52 @@ from itmostalk.api import API
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Center
 from textual.screen import Screen
-from textual.widgets import Button, ContentSwitcher, Footer, Header, Label, Input, LoadingIndicator
+from textual.widgets import (
+    Button,
+    ContentSwitcher,
+    Footer,
+    Header,
+    Label,
+    Input,
+    LoadingIndicator,
+)
 from textual.app import Binding
 
 
 class LoadingContainer(Container):
+    DEFAULT_CSS = """
+        LoadingContainer {
+            width: 100%;
+            height: 100%;
+        }
+    """
+
     def compose(self) -> ComposeResult:
         yield LoadingIndicator()
 
 
 class SelectGroupsContainer(Container):
     DEFAULT_CSS = """
+        SelectGroupsContainer {
+            height: 100%;
+        }
         .title {
             text-align: center;
             width: 100%;
-            margin-top: 10;
+            padding-top: 1;
+        }
+        #group-selection-list {
+            margin: 1;
+            margin-bottom: 3;
+            margin-left: 2;
         }
     """
+
     def compose(self) -> ComposeResult:
         yield Label("Select groups", classes="title")
-        yield TreeSelectionList({"test": [("qwe", 1), ("asd", 2)]}, id="group-selection-list")
+        yield TreeSelectionList(
+            {"test": [("qwe", 1), ("asd", 2)]}, id="group-selection-list"
+        )
 
     def validate_selection(self) -> bool:
         q = self.query_one(TreeSelectionList)
@@ -40,7 +66,9 @@ class MainScreen(Screen):
             margin-left: 10;
             margin-right: 10;
         }
-        #contentswitcher {
+        #contentswitcher { 
+            width: 100%;
+            height: 100%;
         }
     """
 
@@ -55,7 +83,9 @@ class MainScreen(Screen):
         api: API = self.app.api
         groups = await api.get_group_list()
         # print(groups)
-        self.query_one("#group-selection-list", TreeSelectionList).set_options(groups["Бакалавриат"])
+        self.query_one("#group-selection-list", TreeSelectionList).set_options(
+            groups["Бакалавриат"]
+        )
         self.query_one(ContentSwitcher).current = "screen1"
 
     def on_mount(self):
