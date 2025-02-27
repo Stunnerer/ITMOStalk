@@ -1,4 +1,5 @@
-from itmostalk.tui.widgets import TreeSelectionList, Stepper
+from itmostalk.tui.widgets import TreeSelectionList, StepperHeader, StepperFooter
+from itmostalk.api import API
 
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Center
@@ -49,6 +50,16 @@ class MainScreen(Screen):
             yield LoadingContainer(id="loading")
             yield SelectGroupsContainer(id="screen1")
         yield StepperFooter()
+
+    async def update_groups(self) -> None:
+        api: API = self.app.api
+        groups = await api.get_group_list()
+        # print(groups)
+        self.query_one("#group-selection-list", TreeSelectionList).set_options(groups["Бакалавриат"])
+        self.query_one(ContentSwitcher).current = "screen1"
+
+    def on_mount(self):
+        self.run_worker(self.update_groups(), name="update_groups")
 
 
 class LoginScreen(Screen):
