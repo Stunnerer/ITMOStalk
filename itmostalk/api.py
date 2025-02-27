@@ -94,7 +94,10 @@ class API:
             else:
                 return {"success": False, "message": "Invalid email or password"}
         except (httpx.ReadTimeout, httpx.ConnectError):
-            return {"success": False, "message": "Got banned. Use VPN or wait 5-10 minutes."}
+            return {
+                "success": False,
+                "message": "Got banned. Use VPN or wait 5-10 minutes.",
+            }
         return {"success": True}
 
     async def update_links(self):
@@ -102,7 +105,7 @@ class API:
         resp = await client.get(
             "https://isu.ifmo.ru/", headers=self.headers, follow_redirects=True
         )
-        nonce = int(resp.request.url.query.decode().split(":")[-1])
+        nonce = int(resp.request.url.query.decode().rstrip(":").rsplit(":")[-1])
         await self._update_links(nonce)
 
     async def _update_links(self, nonce):
