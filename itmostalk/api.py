@@ -1,9 +1,11 @@
+from html import unescape
 from faker import Faker
 from bs4 import BeautifulSoup
 import pickle
 import os
 import httpx
 import re
+import json
 
 
 class API:
@@ -136,7 +138,81 @@ class API:
             return True
         return False
 
+    async def get_group_list(self) -> dict:
+        # if "group_list" not in self.links:
+        #     await self.update_links()
+        # resp = await self.client.get(self.links["group_list"])
+        # html = await resp.aread()
+        html = open("group_list.html", "r").read()
+        soup = BeautifulSoup(html, "html.parser")
+        current_tag = soup.select_one(
+            'span[data-mustache-template="template-group-grade"]'
+        )
+        quals = {}
+        groups = {}
+        group_name = ""
+        current_grade = ""
+        current_qual = ""
+        current_tag = current_tag.find_previous_sibling()
+        while True:
+            if current_tag.name == "tr":
+                tmp_tag = current_tag.findChild(name="span")
+                text = unescape(tmp_tag.text)
+                text = re.sub("\n +", " ", text)
+                j = json.loads(text)
+                current_qual = j["qualify"]
+                groups = quals[current_qual] = {}
+                current_tag = current_tag.find_next_sibling()
+                continue
+            print(current_tag)
+            text = unescape(current_tag.text)
+            text = re.sub("\n +", " ", text)
+            j = json.loads(text)
+            stype = current_tag.attrs["data-mustache-template"]
+            if stype == "template-group-faculty":
+                groups[
+                    group_name := f"[{current_grade}] {j["nameShort"]} ({j["name"]})"
+                ] = []
+            elif stype == "template-group-group":
+                groups[group_name].append((j["group"], j["groupEnc"]))
+            elif stype == "template-group-grade":
+                current_grade = j["grade"]
+            current_tag = current_tag.find_next_sibling()
+            if not current_tag:
+                break
+        return quals
+
     async def get_potok_list(self) -> dict:
         if "potok_list" not in self.links:
             await self.update_links()
-        # Implement the rest of the method...
+        resp = await self.client.get(self.links["potok_list"])
+        html = await resp.aread()
+        soup = BeautifulSoup(html, "html.parser")
+        groups = {}
+        group_name = None
+        current_group = []
+        current_tag = soup.select_one("span.i_dummy>div.note")
+        group_name = current_tag.findChild().text
+        group_name = re.sub("\n +", " ", group_name)
+        group_name = re.sub(r"\[.+?\] ", "", group_name)
+        while True:
+            current_tag = current_tag.find_next_sibling()
+            if not current_tag:
+                break
+            if current_tag.name == "div":
+                if current_group:
+                    groups[group_name] = current_group
+                    current_group = []
+                group_name = current_tag.findChild().text
+                group_name = re.sub("\n +", " ", group_name)
+                group_name = re.sub(r"\[.+?\] ", "", group_name)
+            else:
+                link = current_tag.attrs["href"]
+                potok_id = link.rsplit(",")[-2]
+                if not potok_id:
+                    continue
+                potok_name = current_tag.text
+                potok_name = re.sub("\n +", " ", potok_name)
+                potok_name = re.sub(r"\[.+?\] ", "", potok_name)
+                current_group.append((potok_name, potok_id))
+        return groups
