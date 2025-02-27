@@ -84,7 +84,9 @@ class TreeSelectionList(SelectionList):
             selections.append((group, index))
             for i in range(len(elements) - 1):
                 element = elements[i]
-                selections.append(Selection("├" + element[0], element[1], disabled=True))
+                selections.append(
+                    Selection("├" + element[0], element[1], disabled=True)
+                )
                 self.groups[index].append(element[1])
             element = elements[-1]
             selections.append(Selection("╰" + element[0], element[1]))
