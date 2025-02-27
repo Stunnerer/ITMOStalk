@@ -42,7 +42,7 @@ class Stepper(Horizontal):
 
 
 class TreeSelectionList(SelectionList):
-    groups: dict = None
+    groups: dict[int, list[tuple[int, str]]] = None
     programmatic_update = False
 
     def __init__(
@@ -60,12 +60,34 @@ class TreeSelectionList(SelectionList):
             index -= 1
             self.groups[index] = []
             selections.append((group, index))
-            for element in elements:
-                selections.append(tuple(element))
+            for i in range(len(elements) - 1):
+                element = elements[i]
+                selections.append(Selection("├" + element[0], element[1], disabled=True))
                 self.groups[index].append(element[1])
+            element = elements[-1]
+            selections.append(Selection("╰" + element[0], element[1]))
+            self.groups[index].append(elements[-1][1])
         super().__init__(
             *selections, name=name, id=id, classes=classes, disabled=disabled
         )
+
+    def set_options(self, groups: dict[str, list[tuple[str, int]]]):
+        self.clear_options()
+        selections = []
+        self.groups = {}
+        index = 0
+        for group, elements in groups.items():
+            index -= 1
+            self.groups[index] = []
+            selections.append((group, index))
+            for i in range(len(elements) - 1):
+                element = elements[i]
+                selections.append((" ├── " + element[0], element[1]))
+                self.groups[index].append(element[1])
+            element = elements[-1]
+            selections.append((" ╰── " + element[0], element[1]))
+            self.groups[index].append(elements[-1][1])
+        self.add_options(selections)
 
     def on_selection_list_selection_toggled(
         self, event: SelectionList.SelectionToggled
