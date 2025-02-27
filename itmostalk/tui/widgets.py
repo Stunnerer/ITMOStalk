@@ -4,7 +4,12 @@ from textual.containers import Horizontal, Container
 from textual.message import Message
 from textual.widget import Widget
 from textual.widgets.selection_list import Selection
+from textual.events import Click
 
+
+class Step(Label):
+    def on_click(self, event: Click):
+        self.app.log(f"Step {self.renderable} clicked")
 
 class StepperHeader(Horizontal):
     DEFAULT_CSS = """
@@ -38,7 +43,7 @@ class StepperHeader(Horizontal):
 
     def compose(self) -> ComposeResult:
         for i in range(len(self.steps) - 1):
-            yield Step(self.steps[i])
+            yield Step(self.steps[i], disabled=True)
             yield Label("->", classes="step-arrow")
         yield Step(self.steps[-1])
 
@@ -84,12 +89,10 @@ class TreeSelectionList(SelectionList):
             selections.append((group, index))
             for i in range(len(elements) - 1):
                 element = elements[i]
-                selections.append(
-                    Selection("├" + element[0], element[1], disabled=True)
-                )
+                selections.append(Selection("├── " + element[0], element[1], disabled=True))
                 self.groups[index].append(element[1])
             element = elements[-1]
-            selections.append(Selection("╰" + element[0], element[1]))
+            selections.append(Selection("╰── " + element[0], element[1]))
             self.groups[index].append(elements[-1][1])
         super().__init__(
             *selections, name=name, id=id, classes=classes, disabled=disabled
