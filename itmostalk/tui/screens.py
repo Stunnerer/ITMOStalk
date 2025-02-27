@@ -3,38 +3,52 @@ from itmostalk.tui.widgets import TreeSelectionList, Stepper
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Center
 from textual.screen import Screen
-from textual.widgets import Button, ContentSwitcher, Footer, Header, Label, Input
+from textual.widgets import Button, ContentSwitcher, Footer, Header, Label, Input, LoadingIndicator
 from textual.app import Binding
 
 
-class SelectGroupsContainer(Container):
-
+class LoadingContainer(Container):
     def compose(self) -> ComposeResult:
-        yield TreeSelectionList({"test": [("qwe", 1), ("asd", 2)]}, id="selection-list")
-        yield Button("Next", id="next_btn")
+        yield LoadingIndicator()
+
+
+class SelectGroupsContainer(Container):
+    DEFAULT_CSS = """
+        .title {
+            text-align: center;
+            width: 100%;
+            margin-top: 10;
+        }
+    """
+    def compose(self) -> ComposeResult:
+        yield Label("Select groups", classes="title")
+        yield TreeSelectionList({"test": [("qwe", 1), ("asd", 2)]}, id="group-selection-list")
 
     def validate_selection(self) -> bool:
+        q = self.query_one(TreeSelectionList)
         return len(self.query_one(TreeSelectionList).selected) > 0
 
 
 class MainScreen(Screen):
     CSS = """
-        #progress-steps {
-            align: center top;
+        MainScreen {
+            width: 100%;
+            height: 100%;
         }
         .step-arrow {
             margin-left: 10;
             margin-right: 10;
         }
+        #contentswitcher {
+        }
     """
 
     def compose(self):
-        with Header() as header:
-            with Horizontal(id="progress-steps"):
-                yield Stepper(["1", "2", "3"], id="progress-steps")
-        with ContentSwitcher(id="contentswitcher", initial="screen1"):
+        yield StepperHeader(["1", "2", "3"])
+        with ContentSwitcher(id="contentswitcher", initial="loading"):
+            yield LoadingContainer(id="loading")
             yield SelectGroupsContainer(id="screen1")
-        yield Footer()
+        yield StepperFooter()
 
 
 class LoginScreen(Screen):
