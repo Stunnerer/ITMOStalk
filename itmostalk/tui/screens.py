@@ -1,14 +1,13 @@
 from itmostalk.tui.widgets import TreeSelectionList, StepperHeader, StepperFooter
 from itmostalk.api import API
 
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Center
 from textual.screen import Screen
 from textual.widgets import (
     Button,
     ContentSwitcher,
-    Footer,
-    Header,
     Label,
     Input,
     LoadingIndicator,
@@ -26,34 +25,19 @@ class LoadingContainer(Container):
 
     def compose(self) -> ComposeResult:
         yield LoadingIndicator()
+        yield Label("text")
 
 
 class SelectGroupsContainer(Container):
-    DEFAULT_CSS = """
-        SelectGroupsContainer {
-            height: 100%;
-        }
-        .title {
-            text-align: center;
-            width: 100%;
-            padding-top: 1;
-        }
-        #group-selection-list {
-            margin: 1;
-            margin-bottom: 3;
-            margin-left: 2;
-        }
-    """
-
     def compose(self) -> ComposeResult:
         yield Label("Select groups", classes="title")
-        yield TreeSelectionList(
-            {"test": [("qwe", 1), ("asd", 2)]}, id="group-selection-list"
-        )
+        yield TreeSelectionList(id="groups")
 
-    def validate_selection(self) -> bool:
-        q = self.query_one(TreeSelectionList)
-        return len(self.query_one(TreeSelectionList).selected) > 0
+
+class SelectPeopleContainer(Container):
+    def compose(self) -> ComposeResult:
+        yield Label("Select people", classes="title")
+        yield TreeSelectionList(id="people")
 
 
 class MainScreen(Screen):
@@ -69,27 +53,42 @@ class MainScreen(Screen):
         #contentswitcher { 
             width: 100%;
             height: 100%;
+            & > {
+                width: 100%;
+                height: 100%;
+            }
+            & > & > TreeSelectionList {
+            margin: 1;
+            margin-bottom: 3;
+            margin-left: 2;
+            }
+        }
+        .title {
+            text-align: center;
+            width: 100%;
+            padding-top: 1;
         }
     """
 
     def compose(self):
-        yield StepperHeader(["1", "2", "3"])
+        yield StepperHeader(["группы", "студенты", "потоки", "расписание"])
         with ContentSwitcher(id="contentswitcher", initial="loading"):
             yield LoadingContainer(id="loading")
-            yield SelectGroupsContainer(id="screen1")
+            yield SelectGroupsContainer(id="groups")
+            yield SelectPeopleContainer(id="people")
         yield StepperFooter()
 
+    @work(name="update_groups")
     async def update_groups(self) -> None:
         api: API = self.app.api
         groups = await api.get_group_list()
-        # print(groups)
-        self.query_one("#group-selection-list", TreeSelectionList).set_options(
-            groups["Бакалавриат"]
-        )
-        self.query_one(ContentSwitcher).current = "screen1"
+        self.app.groups = groups = groups["Бакалавриат"]
+        self.query_one("#groups", TreeSelectionList).set_options(groups)
+        self.query_one(ContentSwitcher).current = "groups"
 
     def on_mount(self):
-        self.run_worker(self.update_groups(), name="update_groups")
+        self.query_one(StepperHeader).set_current(0)
+        self.update_groups()
 
 
 class LoginScreen(Screen):
