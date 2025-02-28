@@ -1,14 +1,40 @@
-from textual.app import App, ComposeResult
-from textual.widgets import SelectionList, Button, Label, ContentSwitcher, TabbedContent
-from textual.containers import Horizontal, Container
-from textual.message import Message
-from textual.widget import Widget
+from textual.app import ComposeResult
+from textual.widgets import (
+    SelectionList,
+    Button,
+    Label,
+)
+from textual.containers import Horizontal
 from textual.widgets.selection_list import Selection
 from textual.events import Click
 
 
 class Step(Label):
-    def on_click(self, event: Click):
+    DEFAULT_CSS = """
+        Step {
+            text-align: center;
+            padding: 0;
+            margin: 0;
+            padding-left: 4;
+            padding-right: 4;
+            
+            &.current {
+                background: $primary-darken-2;
+            }
+
+            &.completed {
+                background: $success-darken-3;
+            }
+        }
+    """
+    num: int = 0
+    def __init__(self, renderable="", num=0, *, classes=None):
+        self.num = num
+        super().__init__(
+            renderable, id=f"step{num}", classes=classes
+        )
+
+    async def on_click(self, event: Click):
         self.app.log(f"Step {self.renderable} clicked")
 
 class StepperHeader(Horizontal):
@@ -19,10 +45,11 @@ class StepperHeader(Horizontal):
             width: 100%;
             height: 1;
             align-horizontal: center;
-        }
-        .step-arrow {
-            margin-left: 10;
-            margin-right: 10;
+            & > .step-arrow {
+                margin: 0;
+                padding: 0;
+                width: 2;
+            }
         }
     """
     steps: list[str] = None
