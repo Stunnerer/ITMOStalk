@@ -28,14 +28,15 @@ class Step(Label):
         }
     """
     num: int = 0
+
     def __init__(self, renderable="", num=0, *, classes=None):
         self.num = num
-        super().__init__(
-            renderable, id=f"step{num}", classes=classes
-        )
+        super().__init__(renderable, id=f"step{num}", classes=classes)
 
     async def on_click(self, event: Click):
         self.app.log(f"Step {self.renderable} clicked")
+        self.parent.set_current(self.num)
+
 
 class StepperHeader(Horizontal):
     DEFAULT_CSS = """
@@ -70,9 +71,26 @@ class StepperHeader(Horizontal):
 
     def compose(self) -> ComposeResult:
         for i in range(len(self.steps) - 1):
-            yield Step(self.steps[i], disabled=True)
-            yield Label("->", classes="step-arrow")
-        yield Step(self.steps[-1])
+            yield Step(self.steps[i], i)
+            # yield Label("->", classes="step-arrow")
+        i += 1
+        yield Step(self.steps[i], i)
+
+    def set_completed(self, index: int):
+        step = (
+            self.query_one("#step" + str(index))
+            .add_class("completed")
+            .remove_class("current")
+        )
+
+    def set_current(self, index: int):
+        self.log("ALO BLYAT")
+        self.query_one("#step" + str(index)).add_class("current").remove_class(
+            "completed"
+        )
+        for i in range(len(self.steps)):
+            if i != index:
+                self.query_one("#step" + str(i)).remove_class("current")
 
 
 class StepperFooter(Horizontal):
