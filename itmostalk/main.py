@@ -1,9 +1,4 @@
-from keycloak import KeycloakOpenID
-import httpx
-import aiohttp
-import re
 import logging
-from time import sleep
 from itmostalk.api import API
 from itmostalk.tui.app import ITMOStalkApp
 import asyncio
