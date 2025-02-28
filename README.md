@@ -1,6 +1,13 @@
 # ITMOStalk
 
-View students' schedules, which is apparently considered as stalking.
+View students' schedules using publicly available info from ISU, which is apparently considered as stalking.
+
+## Features:
+
+- Authorization into ISU
+- Selecting individual groups and people
+- Selecting learning groups (potok)
+- Caching everything for later usage
 
 ## Usage:
 
