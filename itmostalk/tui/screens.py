@@ -92,7 +92,46 @@ class MainScreen(Screen):
 
 
 class LoginScreen(Screen):
+    CSS = """
+        .centered {
+            width: 100%;
+            height: 100%;
+            align: center middle;
+        }
+        
+        .title {
+            text-align: center;
+            margin-bottom: 1;
+        }
 
+        #error_message {
+            color: red;
+            text-style: bold;
+            text-align: center;
+            margin-bottom: 1;
+        }
+
+        #login, #password {
+            margin-bottom: 1;
+        }
+
+        .login-form > * {
+            width: 50%;
+        }
+        
+        .button-container {
+            align: center top;
+            height: auto;
+        }
+
+        Button {
+            width: 40;
+            margin: 10;
+            margin-top: 0;
+            margin-bottom: 0;
+            text-align: center;
+        }
+    """
     BINDINGS = [Binding("enter", "submit()", "Submit", priority=True)]
 
     def compose(self) -> ComposeResult:
