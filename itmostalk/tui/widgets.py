@@ -103,19 +103,30 @@ class StepperFooter(Horizontal):
         StepperFooter {
             dock: bottom;
             width: 100%;
-            height: 3;
-        }
-        .button-next {
-            dock: right;
-        }
-        .button-prev {
-            dock: left;
+            height: 5;
+            & > Button {
+                margin: 1 2;
+                height: 3;
+                width: 1fr;
+            }
+            & > Label {
+                width: 1fr;
+                margin: 2;
+                text-align: center;
+            }
         }
     """
 
     def compose(self) -> ComposeResult:
-        yield Button("< Prev", classes="button-prev")
-        yield Button("Next >", classes="button-next")
+        yield Button("< Prev", id="prev", disabled=True)
+        yield Label("Status", id="status", disabled=True)
+        yield Button("Next >", id="next", disabled=True)
+
+    def on_button_pressed(self, event: Button.Pressed):
+        if event.button.id == "next":
+            self.screen.current_step += 1
+        else:
+            self.screen.current_step -= 1
 
 
 class TreeSelectionList(SelectionList):
