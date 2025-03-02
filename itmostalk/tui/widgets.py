@@ -72,20 +72,30 @@ class StepperHeader(Horizontal):
         yield Step(self.steps[i], i)
 
     def set_completed(self, index: int):
-        step = (
+        (
             self.query_one("#step" + str(index))
-            .add_class("completed")
-            .remove_class("current")
+            .add_class("success")
+            .remove_class("primary")
+        )
+
+    def set_error(self, index: int):
+        (
+            self.query_one("#step" + str(index))
+            .remove_class("success")
+            .add_class("error")
         )
 
     def set_current(self, index: int):
-        self.log("ALO BLYAT")
-        self.query_one("#step" + str(index)).add_class("current").remove_class(
-            "completed"
-        )
+        if index < 0:
+            return
+        self.query_one("#step" + str(index)).add_class("primary").remove_class(
+            "success"
+        ).disabled = True
         for i in range(len(self.steps)):
             if i != index:
-                self.query_one("#step" + str(i)).remove_class("current")
+                self.query_one("#step" + str(i)).remove_class(
+                    "primary"
+                ).disabled = False
 
 
 class StepperFooter(Horizontal):
