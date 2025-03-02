@@ -131,7 +131,6 @@ class StepperFooter(Horizontal):
 
 class TreeSelectionList(SelectionList):
     groups: dict[int, list[tuple[int, str]]] = None
-    programmatic_update = False
 
     def __init__(
         self,
@@ -182,26 +181,20 @@ class TreeSelectionList(SelectionList):
     def on_selection_list_selection_toggled(
         self, event: SelectionList.SelectionToggled
     ) -> None:
-        if self.programmatic_update:
-            return
-        self.programmatic_update = True
-        try:
-            selection_list = event.selection_list
-            current_selection = set(selection_list.selected)
-            selection = event.selection
+        selection_list = event.selection_list
+        current_selection = set(selection_list.selected)
+        selection = event.selection
 
-            if selection.value in self.groups.keys():
-                elements = self.groups[selection.value]
-                if selection.value in current_selection:
-                    [selection_list.select(e) for e in elements]
-                else:
-                    [selection_list.deselect(e) for e in elements]
+        if selection.value in self.groups.keys():
+            elements = self.groups[selection.value]
+            if selection.value in current_selection:
+                [selection_list.select(e) for e in elements]
             else:
-                for group_idx, elements in self.groups.items():
-                    if selection.value in elements:
-                        if group_idx in current_selection:
-                            selection_list.deselect(group_idx)
-                        elif all(e in current_selection for e in elements):
-                            selection_list.select(group_idx)
-        finally:
-            self.programmatic_update = False
+                [selection_list.deselect(e) for e in elements]
+        else:
+            for group_idx, elements in self.groups.items():
+                if selection.value in elements:
+                    if group_idx in current_selection:
+                        selection_list.deselect(group_idx)
+                    elif all(e in current_selection for e in elements):
+                        selection_list.select(group_idx)
