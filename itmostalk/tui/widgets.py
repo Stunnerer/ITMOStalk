@@ -18,12 +18,8 @@ class Step(Label):
             padding-left: 4;
             padding-right: 4;
             
-            &.current {
-                background: $primary-darken-2;
-            }
-
-            &.completed {
-                background: $success-darken-3;
+            &:hover {
+                background: $boost;
             }
         }
     """
@@ -33,9 +29,8 @@ class Step(Label):
         self.num = num
         super().__init__(renderable, id=f"step{num}", classes=classes)
 
-    async def on_click(self, event: Click):
-        self.app.log(f"Step {self.renderable} clicked")
-        self.parent.set_current(self.num)
+    def on_click(self, event: Click):
+        self.screen.current_step = self.num
 
 
 class StepperHeader(Horizontal):
