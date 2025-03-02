@@ -93,6 +93,11 @@ class MainScreen(Screen):
         self.query_one(StepperHeader).disabled = False
         self.current_step = 0
 
+    @work(name="update_people")
+    async def update_people(self) -> None:
+        api: API = self.app.api
+        pass
+
     def watch_current_step(self, step: int):
         self.query_one(StepperHeader).set_current(step)
         self.query_one(ContentSwitcher).current = self.steps[step]
