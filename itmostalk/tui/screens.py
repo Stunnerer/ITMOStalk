@@ -30,14 +30,33 @@ class LoadingContainer(Container):
 
 class SelectGroupsContainer(Container):
     def compose(self) -> ComposeResult:
-        yield Label("Select groups", classes="title")
+        yield Label(f"Select groups (0/{self.app.MAX_SELECTION})", classes="title")
         yield TreeSelectionList(id="groups")
+
+    @on(TreeSelectionList.SelectionToggled)
+    def selection_toggle(self, event: TreeSelectionList.SelectionToggled):
+        selected = event.selection_list.selected
+        self.log(selected)
+        selected = list(filter(lambda x: isinstance(x, str), selected))
+        count = len(selected)
+        self.query_one(".title", Label).update(
+            f"Select groups ({count}/{self.app.MAX_SELECTION})"
+        )
 
 
 class SelectPeopleContainer(Container):
     def compose(self) -> ComposeResult:
-        yield Label("Select people", classes="title")
+        yield Label(f"Select people (0/{self.app.MAX_SELECTION * 5})", classes="title")
         yield TreeSelectionList(id="people")
+
+    @on(TreeSelectionList.SelectionToggled)
+    def selection_toggle(self, event: TreeSelectionList.SelectionToggled):
+        selected = event.selection_list.selected
+        selected = list(filter(lambda x: isinstance(x, str), selected))
+        count = len(selected)
+        self.query_one(".title", Label).update(
+            f"Select groups ({count}/{self.app.MAX_SELECTION})"
+        )
 
 
 class MainScreen(Screen):
