@@ -26,7 +26,6 @@ class LoadingContainer(Container):
 
     def compose(self) -> ComposeResult:
         yield LoadingIndicator()
-        yield Label("text")
 
 
 class SelectGroupsContainer(Container):
