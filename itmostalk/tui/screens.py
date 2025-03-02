@@ -1,7 +1,7 @@
 from itmostalk.tui.widgets import TreeSelectionList, StepperHeader, StepperFooter
 from itmostalk.api import API
 
-from textual import work
+from textual import work, on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Center
 from textual.screen import Screen
@@ -12,6 +12,7 @@ from textual.widgets import (
     Input,
     LoadingIndicator,
 )
+from textual.reactive import var
 from textual.app import Binding
 
 
@@ -70,8 +71,14 @@ class MainScreen(Screen):
         }
     """
 
+    current_step = var(-1, init=False)
+    steps = ["groups", "people", "potoks", "schedule", "loading"]
+    ready = [False] * 4
+
     def compose(self):
-        yield StepperHeader(["группы", "студенты", "потоки", "расписание"])
+        yield StepperHeader(
+            ["группы", "студенты", "потоки", "расписание"], disabled=True
+        )
         with ContentSwitcher(id="contentswitcher", initial="loading"):
             yield LoadingContainer(id="loading")
             yield SelectGroupsContainer(id="groups")
@@ -84,10 +91,26 @@ class MainScreen(Screen):
         groups = await api.get_group_list()
         self.app.groups = groups = groups["Бакалавриат"]
         self.query_one("#groups", TreeSelectionList).set_options(groups)
-        self.query_one(ContentSwitcher).current = "groups"
+        self.query_one(StepperHeader).disabled = False
+        self.current_step = 0
+
+    def watch_current_step(self, step: int):
+        self.query_one(StepperHeader).set_current(step)
+        self.query_one(ContentSwitcher).current = self.steps[step]
+        if step < 0:
+            self.query_one(StepperFooter).query_one("#prev", Button).disabled = True
+            self.query_one(StepperFooter).query_one("#next", Button).disabled = True
+        elif step == 0:
+            self.query_one(StepperFooter).query_one("#prev", Button).disabled = True
+            self.query_one(StepperFooter).query_one("#next", Button).disabled = False
+        elif step < len(self.steps) - 1:
+            self.query_one(StepperFooter).query_one("#prev", Button).disabled = False
+            self.query_one(StepperFooter).query_one("#next", Button).disabled = False
+        else:
+            self.query_one(StepperFooter).query_one("#prev", Button).disabled = False
+            self.query_one(StepperFooter).query_one("#next", Button).disabled = True
 
     def on_mount(self):
-        self.query_one(StepperHeader).set_current(0)
         self.update_groups()
 
 
