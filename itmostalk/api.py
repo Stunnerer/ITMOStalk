@@ -164,7 +164,6 @@ class API:
                 groups = quals[current_qual] = {}
                 current_tag = current_tag.find_next_sibling()
                 continue
-            print(current_tag)
             text = unescape(current_tag.text)
             text = re.sub("\n +", " ", text)
             j = json.loads(text)
