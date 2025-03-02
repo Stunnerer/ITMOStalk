@@ -181,6 +181,33 @@ class API:
                 break
         return quals
 
+    def get_people(self, html) -> list[tuple[int, str]]:
+        soup = BeautifulSoup(html, "html.parser")
+        tbody = soup.select_one("table.table.table-bordered").select_one("tbody")
+        rows = tbody.findChildren("tr")
+        people = []
+        for row in rows:
+            uid, name = 0, ""
+            for td in row.findChildren("td"):
+                header = td.attrs["headers"][0]
+                if "ИД" in header:
+                    uid = int(td.text)
+                elif header == "ФИО":
+                    name = td.text
+                    name = name.strip()
+                    name = unescape(name)
+                    name = re.sub("\n? +", " ", name)
+            people.append((uid, name))
+        return people
+
+    async def get_people_from_group(self, group_id: str) -> list:
+        html = open("pages_for_test/group_people.html")
+        # if "group_students" not in self.links:
+        #     await self.update_links()
+        # resp = await self.client.get(self.links["group_students"].format(group_id=group_id))
+        # html = await resp.aread()
+        return self.get_people(html)
+
     async def get_potok_list(self) -> dict:
         if "potok_list" not in self.links:
             await self.update_links()
@@ -215,3 +242,11 @@ class API:
                 potok_name = re.sub(r"\[.+?\] ", "", potok_name)
                 current_group.append((potok_name, potok_id))
         return groups
+
+    async def get_people_from_potok(self, potok_id: int) -> list:
+        html = open("pages_for_test/potok_people.html")
+        # if "potok_students" not in self.links:
+        #     await self.update_links()
+        # resp = await self.client.get(self.links["potok_students"].format(potok_id=potok_id))
+        # html = await resp.aread()
+        return self.get_people(html)
