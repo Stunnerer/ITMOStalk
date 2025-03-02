@@ -33,4 +33,7 @@ async def _main():
         await api.auth(input(), input())
         await api.save_cookies()
         await asyncio.sleep(3)
-    print(await api.check_auth())
+    # await api.update_links()
+    # await api.client.get(api.links["group_list"], headers=HEADERS)
+    print(await api.get_people_from_group("c3100"))
+    # print(await api.get_people_from_potok("qwe"))
