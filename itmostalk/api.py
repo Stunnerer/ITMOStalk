@@ -32,14 +32,14 @@ class API:
         self.client = httpx.AsyncClient(headers=self.headers)
 
     async def save_cookies(self):
-        with open("cookies.pk", "wb") as f:
+        with open("data/cookies.pk", "wb") as f:
             pickle.dump(self.client.cookies.jar._cookies, f)
 
     async def load_cookies(self):
-        if not os.path.isfile("cookies.pk"):
+        if not os.path.isfile("data/cookies.pk"):
             return None
         cookies = httpx.Cookies()
-        with open("cookies.pk", "rb") as f:
+        with open("data/cookies.pk", "rb") as f:
             jar_cookies = pickle.load(f)
         for domain, pc in jar_cookies.items():
             for path, c in pc.items():
