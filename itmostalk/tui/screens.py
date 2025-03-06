@@ -70,10 +70,10 @@ class SelectPeopleContainer(Container):
     @on(TreeSelectionList.SelectionToggled)
     def selection_toggle(self, event: TreeSelectionList.SelectionToggled):
         selected = event.selection_list.selected
-        selected = list(filter(lambda x: isinstance(x, str), selected))
+        selected = list(filter(lambda x: x > 0, selected))
         count = len(selected)
         self.query_one(".title", Label).update(
-            f"Select groups ({count}/{self.app.MAX_SELECTION})"
+            f"Select people ({count}/{self.app.MAX_SELECTION * 5})"
         )
 
 
