@@ -1,13 +1,12 @@
 from html import unescape
-from faker import Faker
-from bs4 import BeautifulSoup
-import pickle
-import os
+
 import httpx
-import re
-import json
+from bs4 import BeautifulSoup
+from faker import Faker
+import logging
 
-
+from itmostalk.db.bindings import Group, Info, Potok, Student, db_session
+from itmostalk.db import functions as cache
 class API:
 
     client: httpx.AsyncClient = None
