@@ -21,6 +21,9 @@ HEADERS = {
 
 async def main():
     app = ITMOStalkApp()
+    path = Path() / "data" / "cache.db"
+    db.bind("sqlite", filename=str(path.absolute()), create_db=True)
+    db.generate_mapping(create_tables=True)
     await app.run_async()
 
 
