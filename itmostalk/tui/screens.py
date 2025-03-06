@@ -168,8 +168,20 @@ class MainScreen(Screen):
         self.current_step = 2
 
     def watch_current_step(self, step: int):
+        callable = None
+        if step > 0 and not self.ready[step]:
+            match step:
+                case 1:
+                    callable = self.update_people
+                case 2:
+                    callable = self.update_potoks
+            self.set_reactive(MainScreen.current_step, -1)
+            step = -1
         self.query_one(StepperHeader).set_current(step)
+        self.query_one(StepperHeader).disabled = step == -1
         self.query_one(ContentSwitcher).current = self.steps[step]
+        if step != -1:
+            self.query_one("#status", Label).update("")
         if step < 0:
             self.query_one(StepperFooter).query_one("#prev", Button).disabled = True
             self.query_one(StepperFooter).query_one("#next", Button).disabled = True
@@ -182,6 +194,8 @@ class MainScreen(Screen):
         else:
             self.query_one(StepperFooter).query_one("#prev", Button).disabled = False
             self.query_one(StepperFooter).query_one("#next", Button).disabled = True
+        if callable:
+            callable()
 
     def on_mount(self):
         self.update_groups()
