@@ -42,6 +42,24 @@ class SelectGroupsContainer(Container):
         self.query_one(".title", Label).update(
             f"Select groups ({count}/{self.app.MAX_SELECTION})"
         )
+        self.screen.ready[1] = False
+
+
+class SelectPotoksContainer(Container):
+    def compose(self) -> ComposeResult:
+        yield Label(f"Select potoks (0/{self.app.MAX_SELECTION})", classes="title")
+        yield TreeSelectionList(id="potoks")
+
+    @on(TreeSelectionList.SelectionToggled)
+    def selection_toggle(self, event: TreeSelectionList.SelectionToggled):
+        selected = event.selection_list.selected
+        self.log(selected)
+        selected = list(filter(lambda x: isinstance(x, str), selected))
+        count = len(selected)
+        self.query_one(".title", Label).update(
+            f"Select potoks ({count}/{self.app.MAX_SELECTION})"
+        )
+        self.screen.ready[1] = False
 
 
 class SelectPeopleContainer(Container):
@@ -101,21 +119,53 @@ class MainScreen(Screen):
             yield LoadingContainer(id="loading")
             yield SelectGroupsContainer(id="groups")
             yield SelectPeopleContainer(id="people")
+            yield SelectPotoksContainer(id="potoks")
         yield StepperFooter()
 
-    @work(name="update_groups")
+    @work(name="update_groups", exclusive=True, thread=True)
     async def update_groups(self) -> None:
         api: API = self.app.api
+        self.query_one("#status", Label).update("Обновление списка групп...")
         groups = await api.get_group_list()
-        self.app.groups = groups = groups["Бакалавриат"]
+        self.app.groups = groups
         self.query_one("#groups", TreeSelectionList).set_options(groups)
-        self.query_one(StepperHeader).disabled = False
+        self.ready[0] = True
         self.current_step = 0
 
-    @work(name="update_people")
+    @work(name="update_people", exclusive=True, thread=True)
     async def update_people(self) -> None:
         api: API = self.app.api
-        pass
+        self.query_one("#status", Label).update("Получение студентов...")
+        selected = self.query_one("#groups", TreeSelectionList).selected
+        selected = list(filter(lambda x: isinstance(x, str), selected))
+        if not selected:
+            self.current_step = 0
+            return
+        groups = {}
+        for group in selected:
+            result = await api.get_people_from_group(group)
+            people = []
+            for person in result:
+                people.append(
+                    (
+                        f"({person[0]}) {person[1]}",
+                        person[0],
+                    )
+                )
+            groups[group] = people
+        self.query_one("#people", TreeSelectionList).set_options(groups)
+        self.ready[1] = True
+        self.current_step = 1
+
+    @work(name="update_potoks", exclusive=True, thread=True)
+    async def update_potoks(self) -> None:
+        self.query_one("#status", Label).update("Обновление списка потоков...")
+        api: API = self.app.api
+        groups = await api.get_potok_list()
+        self.app.potoks = groups
+        self.query_one("#potoks", TreeSelectionList).set_options(groups)
+        self.ready[2] = True
+        self.current_step = 2
 
     def watch_current_step(self, step: int):
         self.query_one(StepperHeader).set_current(step)
