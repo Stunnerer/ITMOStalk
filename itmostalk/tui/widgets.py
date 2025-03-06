@@ -169,12 +169,15 @@ class TreeSelectionList(SelectionList):
             index -= 1
             self.groups[index] = []
             selections.append((group, index))
+            padding = 2
+            if '[' in group and ']' in group:
+                padding = (group.index(']') - group.index('[') )// 2
             for i in range(len(elements) - 1):
                 element = elements[i]
-                selections.append((" ├── " + element[0], element[1]))
+                selections.append((" " * padding + "├── " + element[0], element[1]))
                 self.groups[index].append(element[1])
             element = elements[-1]
-            selections.append((" ╰── " + element[0], element[1]))
+            selections.append((" " * padding + "╰── " + element[0], element[1]))
             self.groups[index].append(elements[-1][1])
         self.add_options(selections)
 
