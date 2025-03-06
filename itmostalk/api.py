@@ -16,6 +16,7 @@ class API:
     authorized = False
 
     def __init__(self, headers=None):
+        self.logger = logging.getLogger("API")
         self.faker = Faker()
         self.links = {}
         if not headers:
