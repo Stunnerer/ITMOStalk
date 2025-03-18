@@ -1,3 +1,10 @@
+import asyncio
+import datetime
+import json
+import os
+import pickle
+import re
+import pytz
 from html import unescape
 
 import httpx
@@ -5,8 +12,10 @@ from bs4 import BeautifulSoup
 from faker import Faker
 import logging
 
-from itmostalk.db.bindings import Group, Info, Potok, Student, db_session
+from itmostalk.db.bindings import Group, Info, Potok, Student, ScheduleEntry, db_session
 from itmostalk.db import functions as cache
+
+
 class API:
 
     client: httpx.AsyncClient = None
@@ -17,6 +26,7 @@ class API:
 
     def __init__(self, headers=None):
         self.logger = logging.getLogger("API")
+        self._count = 0
         self.faker = Faker()
         self.links = {}
         if not headers:
@@ -64,7 +74,7 @@ class API:
         auth_link = re.search(
             r"kc-form-login\".+?action=\"(.+?)\"", resp.text, re.MULTILINE
         ).group(1)
-        self.links["auth"] = auth_link
+        self.links["auth"] = unescape(auth_link)
 
     async def auth(self, email, password):
         client = self.client
@@ -86,6 +96,7 @@ class API:
                 },
                 follow_redirects=True,
             )
+            open("qwe.html", "wb").write(resp.content)
             if resp.status_code == 302:
                 self.authorized = True
                 cookies.update(resp.cookies)
@@ -107,6 +118,7 @@ class API:
         resp = await client.get(
             "https://isu.ifmo.ru/", headers=self.headers, follow_redirects=True
         )
+        self._count = 0
         nonce = int(resp.request.url.query.decode().rstrip(":").rsplit(":")[-1])
         await self._update_links(nonce)
 
@@ -137,18 +149,23 @@ class API:
             await self._update_links(nonce)
             return True
         return False
+    
+    async def isu_get(self, link, **format):
+        if link not in self.links or self._count > 10:
+            await self.update_links()
+            await asyncio.sleep(0.5)
+        resp = await self.client.get(self.links[link].format(**format), follow_redirects=True)
+        return await resp.aread()
 
-    async def get_group_list(self) -> dict:
-        # if "group_list" not in self.links:
-        #     await self.update_links()
-        # resp = await self.client.get(self.links["group_list"])
-        # html = await resp.aread()
-        html = open("group_list.html", "r").read()
+    async def get_group_list(self) -> dict[str, list[tuple[str, str]]]:
+        # html = open("pages_for_test/group_list.html")
+        if "group_list" not in self.links:
+            await self.update_links()
+        html = await self.isu_get("group_list")
         soup = BeautifulSoup(html, "html.parser")
         current_tag = soup.select_one(
             'span[data-mustache-template="template-group-grade"]'
         )
-        quals = {}
         groups = {}
         group_name = ""
         current_grade = ""
@@ -160,8 +177,7 @@ class API:
                 text = unescape(tmp_tag.text)
                 text = re.sub("\n +", " ", text)
                 j = json.loads(text)
-                current_qual = j["qualify"]
-                groups = quals[current_qual] = {}
+                current_qual = j["qualify"][:3]
                 current_tag = current_tag.find_next_sibling()
                 continue
             text = unescape(current_tag.text)
@@ -169,9 +185,10 @@ class API:
             j = json.loads(text)
             stype = current_tag.attrs["data-mustache-template"]
             if stype == "template-group-faculty":
-                groups[
-                    group_name := f"[{current_grade}] {j["nameShort"]} ({j["name"]})"
-                ] = []
+                groups.setdefault(
+                    group_name := f"[{current_qual} {current_grade}] {j["nameShort"]} ({j["name"]})",
+                    [],
+                )
             elif stype == "template-group-group":
                 groups[group_name].append((j["group"], j["groupEnc"]))
             elif stype == "template-group-grade":
@@ -179,13 +196,13 @@ class API:
             current_tag = current_tag.find_next_sibling()
             if not current_tag:
                 break
-        return quals
+        cache.set_group_list(groups)
+        return groups
 
-    def get_people(self, html) -> list[tuple[int, str]]:
+    def get_people(self, html):
         soup = BeautifulSoup(html, "html.parser")
         tbody = soup.select_one("table.table.table-bordered").select_one("tbody")
         rows = tbody.findChildren("tr")
-        people = []
         for row in rows:
             uid, name = 0, ""
             for td in row.findChildren("td"):
@@ -197,22 +214,22 @@ class API:
                     name = name.strip()
                     name = unescape(name)
                     name = re.sub("\n? +", " ", name)
-            people.append((uid, name))
+            yield (uid, name)
+
+    async def get_people_from_group(self, group_id: str):
+        # html = open("pages_for_test/group_people.html")
+        html = await self.isu_get("group_students", group_id=group_id)
+        people = list(self.get_people(html))
+        with db_session:
+            group = Group.get(id=group_id)
+            for uid, name in people:
+                student = Student.get(id=uid) or Student(id=uid, name=name)
+                group.students.add(student)
         return people
 
-    async def get_people_from_group(self, group_id: str) -> list:
-        html = open("pages_for_test/group_people.html")
-        # if "group_students" not in self.links:
-        #     await self.update_links()
-        # resp = await self.client.get(self.links["group_students"].format(group_id=group_id))
-        # html = await resp.aread()
-        return self.get_people(html)
-
-    async def get_potok_list(self) -> dict:
-        if "potok_list" not in self.links:
-            await self.update_links()
-        resp = await self.client.get(self.links["potok_list"])
-        html = await resp.aread()
+    async def get_potok_list(self) -> dict[str, list[tuple[str, int]]]:
+        # html = open("pages_for_test/potok_list.html")
+        html = await self.isu_get("potok_list")
         soup = BeautifulSoup(html, "html.parser")
         groups = {}
         group_name = None
@@ -237,16 +254,92 @@ class API:
                 potok_id = link.rsplit(",")[-2]
                 if not potok_id:
                     continue
+                potok_id = int(potok_id)
                 potok_name = current_tag.text
                 potok_name = re.sub("\n +", " ", potok_name)
                 potok_name = re.sub(r"\[.+?\] ", "", potok_name)
                 current_group.append((potok_name, potok_id))
+        cache.set_potok_list(groups)
         return groups
 
     async def get_people_from_potok(self, potok_id: int) -> list:
-        html = open("pages_for_test/potok_people.html")
-        # if "potok_students" not in self.links:
-        #     await self.update_links()
-        # resp = await self.client.get(self.links["potok_students"].format(potok_id=potok_id))
-        # html = await resp.aread()
-        return self.get_people(html)
+        # html = open("pages_for_test/potok_people.html")
+        html = await self.isu_get("potok_students", potok_id=potok_id)
+        people = list(self.get_people(html))
+        with db_session:
+            group = Potok.get(id=potok_id)
+            if group:
+                for uid, name in people:
+                    student = Student.get(id=uid) or Student(id=uid, name=name)
+                    group.students.add(student)
+        return people
+
+    async def get_potok_schedule(self, potok_id: int) -> dict:
+        # html = open("pages_for_test/potok_schedule.html")z
+        html = await self.isu_get("potok_schedule", potok_id=potok_id)
+        soup = BeautifulSoup(html, "html.parser")
+        current_tag = soup.select_one("table.table.table-bordered").select_one("tr")
+        schedule = []
+        while current_tag is not None:
+            if current_tag.name == "tr":
+                td = current_tag.select_one("td")
+                if td.attrs.get("id", "") == "ДЕНЬ":
+                    h4 = td.findChild("h4")
+                    day = h4.text.strip().split(",")[0]
+                    self.logger.debug("potok_schedule day: %s", day)
+                    day = datetime.datetime.strptime(day, "%d.%m.%Y").date()
+                    current_tag = current_tag.find_next_sibling()
+                    continue
+                else:
+                    name = ""
+                    while td is not None:
+                        if td.attrs.get("headers", [""])[0].startswith("ПАРА"):
+                            text = td.getText(strip=True)
+                            time_segments = re.findall(r"(\d{1,2}:\d{2})", text)
+                            # self.logger.debug("potok_schedule text: %s, segments: %s", text, time_segments)
+                            # fmt: off
+                            start = datetime.datetime.strptime(
+                                time_segments[0], "%H:%M"
+                            ).replace(tzinfo=pytz.timezone("Europe/Moscow")).timetz()
+                            end = datetime.datetime.strptime(
+                                time_segments[1], "%H:%M"
+                            ).replace(tzinfo=pytz.timezone("Europe/Moscow")).timetz()
+                            # fmt: on
+                            self.logger.debug(
+                                "potok_schedule time: %s ~ %s", start, end
+                            )
+                        elif td.attrs.get("headers", [""])[0].startswith("ДИСЦ_НАИМ"):
+                            text = td.getText(strip=True)
+                            text = re.sub("\n +", " ", text)
+                            text = text.strip()
+                            name = text
+                            self.logger.debug("potok_schedule name: %s", name)
+                        elif td.attrs.get("headers", [""])[0].startswith("АУДИТОРИЯ"):
+                            text = td.getText(separator="<|>", strip=True)
+                            text = re.sub("\n +", " ", text)
+                            text = text.strip()
+                            if "-" in text:
+                                location = "нет аудитории"
+                            auditorium, place = text.split("<|>")
+                            location = f"{place}; ауд. {auditorium}"
+                            self.logger.debug("potok_schedule location: %s", location)
+                        elif td.attrs.get("headers", [""])[0].startswith("ПРЕПОДАВАТЕЛЬ"):
+                            text = td.a.getText(strip=True)
+                            text = re.sub("\n +", " ", text)
+                            text = text.strip()
+                            teacher = text
+                            self.logger.debug("potok_schedule teacher: %s", teacher)
+                        td = td.find_next_sibling()
+                    entry = dict(date=day, start=start, end=end, subject=name, teacher=teacher, location=location)
+                    schedule.append(entry)
+                    current_tag = current_tag.find_next_sibling()
+            elif current_tag.name == "thead":
+                current_tag = current_tag.find_next_sibling()
+            else:
+                current_tag = current_tag.select_one("tr")
+        with db_session:
+            potok = Potok.get(id=potok_id)
+            if potok:
+                for entry in schedule:
+                    potok.schedule.create(**entry)
+        return schedule
