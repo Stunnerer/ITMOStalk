@@ -1,5 +1,5 @@
 from pony.orm import *
-from datetime import datetime
+from datetime import date, time
 
 db = Database()
 
@@ -10,6 +10,7 @@ class Info(db.Entity):
 class Student(db.Entity):
     id = PrimaryKey(int)
     name = Required(str)
+    enabled = Required(bool, default=False)
     groups = Set("Group", table="group_students")
     potoks = Set("Potok", table="potok_students")
 
@@ -30,11 +31,14 @@ class Potok(db.Entity):
 
 
 class ScheduleEntry(db.Entity):
+    id = PrimaryKey(int, auto=True)
     potok = Required(Potok)
-    start = Required(datetime)
-    end = Required(datetime)
-    name = Required(str)
-    PrimaryKey(potok, start)
+    date = Required(date)
+    start = Required(time)
+    end = Required(time)
+    subject = Required(str)
+    teacher = Required(str)
+    location = Required(str)
 
 @db_session
 def get_student_schedule(student_id):
