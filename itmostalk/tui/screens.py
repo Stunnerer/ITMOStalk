@@ -1,6 +1,13 @@
-from itmostalk.tui.widgets import TreeSelectionList, StepperHeader, StepperFooter
+from itmostalk.tui.widgets import (
+    TreeSelectionList,
+    StepperHeader,
+    StepperFooter,
+    Schedule,
+)
 from itmostalk.api import API
+from itmostalk.db import functions as cache
 
+import asyncio
 from textual import work, on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Center
@@ -10,6 +17,9 @@ from textual.widgets import (
     ContentSwitcher,
     Label,
     Input,
+    Header,
+    Footer,
+    Select,
     LoadingIndicator,
 )
 from textual.reactive import var
@@ -126,7 +136,9 @@ class MainScreen(Screen):
     async def update_groups(self) -> None:
         api: API = self.app.api
         self.query_one("#status", Label).update("Обновление списка групп...")
-        groups = await api.get_group_list()
+        groups = cache.get_group_list()
+        if not groups:
+            groups = await api.get_group_list()
         self.app.groups = groups
         self.query_one("#groups", TreeSelectionList).set_options(groups)
         self.ready[0] = True
@@ -142,8 +154,15 @@ class MainScreen(Screen):
             self.current_step = 0
             return
         groups = {}
-        for group in selected:
-            result = await api.get_people_from_group(group)
+        cnt = len(selected)
+        for index, group in enumerate(selected):
+            self.query_one("#status", Label).update(
+                f"Получение студентов ({index + 1}/{cnt})..."
+            )
+            result = cache.get_group_people(group)
+            if not result:
+                result = await api.get_people_from_group(group)
+                await asyncio.sleep(1)  # rate limit protection
             people = []
             for person in result:
                 people.append(
@@ -152,7 +171,7 @@ class MainScreen(Screen):
                         person[0],
                     )
                 )
-            groups[group] = people
+            groups[group.capitalize()] = people
         self.query_one("#people", TreeSelectionList).set_options(groups)
         self.ready[1] = True
         self.current_step = 1
@@ -160,8 +179,13 @@ class MainScreen(Screen):
     @work(name="update_potoks", exclusive=True, thread=True)
     async def update_potoks(self) -> None:
         self.query_one("#status", Label).update("Обновление списка потоков...")
+        selected = self.query_one("#people", TreeSelectionList).selected
+        selected = list(filter(lambda x: x > 0, selected))
+        cache.enable_students(selected)
         api: API = self.app.api
-        groups = await api.get_potok_list()
+        groups = cache.get_potok_list()
+        if not groups:
+            groups = await api.get_potok_list()
         self.app.potoks = groups
         self.query_one("#potoks", TreeSelectionList).set_options(groups)
         self.ready[2] = True
