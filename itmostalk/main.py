@@ -1,7 +1,13 @@
+import asyncio
 import logging
+import sys
+
 from itmostalk.api import API
 from itmostalk.tui.app import ITMOStalkApp
-import asyncio
+from itmostalk.db.bindings import *
+from itmostalk.db import functions as cache
+
+from pathlib import Path
 
 logging.basicConfig(
     format="%(levelname)s [%(asctime)s] %(name)s - %(message)s",
@@ -10,16 +16,7 @@ logging.basicConfig(
 )
 
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "ru-RU,ru;q=0.9",
-    "Priority": "u=0, i",
-}
-
-
-async def main():
+async def run_tui():
     app = ITMOStalkApp()
     path = Path() / "data" / "cache.db"
     db.bind("sqlite", filename=str(path.absolute()), create_db=True)
@@ -27,8 +24,11 @@ async def main():
     await app.run_async()
 
 
-async def _main():
+async def run_test():
     api = API(headers=HEADERS)
+    path = Path() / "data" / "cache.db"
+    db.bind("sqlite", filename=str(path.absolute()), create_db=True)
+    db.generate_mapping(create_tables=True)
     if not await api.load_cookies():
         await api.get_auth_link()
         print("throttling")
@@ -38,5 +38,18 @@ async def _main():
         await asyncio.sleep(3)
     # await api.update_links()
     # await api.client.get(api.links["group_list"], headers=HEADERS)
-    print(await api.get_people_from_group("c3100"))
+    quals = await api.get_potok_list()
+    quals1 = await api.get_potok_schedule(63176)
+    print(quals1)
+    # print(quals == quals1)
+    # quals = await api.get_potok_schedule(1)
+    # print(quals)
+
     # print(await api.get_people_from_potok("qwe"))
+
+
+async def main():
+    if "test" in sys.argv:
+        await run_test()
+    else:
+        await run_tui()
