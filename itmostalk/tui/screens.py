@@ -69,7 +69,7 @@ class SelectPotoksContainer(Container):
         self.query_one(".title", Label).update(
             f"Select potoks ({count}/{self.app.MAX_SELECTION})"
         )
-        self.screen.ready[1] = False
+        self.screen.ready[3] = False
 
 
 class SelectPeopleContainer(Container):
@@ -90,6 +90,75 @@ class SelectPeopleContainer(Container):
 class MainScreen(Screen):
     CSS = """
         MainScreen {
+            width: 100%;
+            height: 100%;
+            & > Horizontal {
+                align: center top;
+            }
+        }
+    """
+
+    BINDINGS = ["esc", "show_menu()", "Show menu"]
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Select(options=[("1", 1), ("2", 2)], allow_blank=False, id="students")
+        with Horizontal():
+            yield Schedule(
+                day="10.03.2025",
+                entries=[
+                    {
+                        "start": "10:00",
+                        "end": "11:30",
+                        "subject": "Английский язык",
+                        "location": "ул. Ломоносова, 9, ауд. 3108",
+                        "teacher": "Шпак В. В.",
+                    }
+                    for _ in range(5)
+                ],
+                id="left",
+            )
+            yield Schedule(
+                day="11.03.2025",
+                entries=[
+                    {
+                        "start": "10:00",
+                        "end": "11:30",
+                        "subject": "Английский язык",
+                        "location": "ул. Ломоносова, 9, ауд. 3108",
+                        "teacher": "Шпак В. В.",
+                    }
+                    for _ in range(5)
+                ],
+                id="center",
+            )
+            yield Schedule(
+                day="12.03.2025",
+                entries=[
+                    {
+                        "start": "10:00",
+                        "end": "11:30",
+                        "subject": "Английский язык",
+                        "location": "ул. Ломоносова, 9, ауд. 3108",
+                        "teacher": "Шпак В. В.",
+                    }
+                    for _ in range(5)
+                ],
+                id="right",
+            )
+        yield Footer()
+
+    def action_open_menu():
+        pass
+
+    @on(Select.Changed)
+    def select_changed(self, event: Select.Changed) -> None:
+        self.title = f"Расписание для студента {event.value}"
+
+
+class SetupScreen(Screen):
+    CSS = """
+        SetupScreen {
             width: 100%;
             height: 100%;
         }
@@ -130,9 +199,16 @@ class MainScreen(Screen):
             yield SelectGroupsContainer(id="groups")
             yield SelectPeopleContainer(id="people")
             yield SelectPotoksContainer(id="potoks")
+            with Center(id="schedule"):
+                yield Label("Расписание построено!")
+                yield Button("Посмотреть расписание", id="exit_setup")
         yield StepperFooter()
 
-    @work(name="update_groups", exclusive=True, thread=True)
+    @on(Button.Pressed, "#exit_setup")
+    async def exit_setup(self, event: Button.Pressed) -> None:
+        await self.app.push_screen(MainScreen())
+
+    @work(name="update_groups", exclusive=True)
     async def update_groups(self) -> None:
         api: API = self.app.api
         self.query_one("#status", Label).update("Обновление списка групп...")
@@ -191,6 +267,38 @@ class MainScreen(Screen):
         self.ready[2] = True
         self.current_step = 2
 
+    @work(name="build_schedule", exclusive=True)
+    async def build_schedule(self) -> None:
+        api: API = self.app.api
+        potoks_to_fetch = self.query_one("#potoks", TreeSelectionList).selected
+        potoks_to_fetch = list(filter(lambda x: x > 0, potoks_to_fetch))
+        if not potoks_to_fetch:
+            self.current_step = 2
+            return
+        cnt = len(potoks_to_fetch)
+        self.query_one("#status", Label).update(f"Построение связей (0/{cnt})...")
+        for index, potok_id in enumerate(potoks_to_fetch):
+            self.query_one("#status", Label).update(
+                f"Построение связей ({index+1}/{cnt})..."
+            )
+            people = cache.get_potok_people(potok_id)
+            if not people:
+                people = await api.get_people_from_potok(potok_id)
+                await asyncio.sleep(1)  # rate limit protection
+
+        self.query_one("#status", Label).update(f"Получение расписания (0/{cnt})...")
+        for index, potok_id in enumerate(potoks_to_fetch):
+            self.query_one("#status", Label).update(
+                f"Получение расписания ({index+1}/{cnt})..."
+            )
+            people = cache.get_potok_people(potok_id)
+            if not people:
+                people = await api.get_potok_schedule(potok_id)
+                await asyncio.sleep(1)  # rate limit protection
+
+        self.ready[3] = True
+        self.current_step = 3
+
     def watch_current_step(self, step: int):
         callable = None
         if step > 0 and not self.ready[step]:
@@ -199,7 +307,9 @@ class MainScreen(Screen):
                     callable = self.update_people
                 case 2:
                     callable = self.update_potoks
-            self.set_reactive(MainScreen.current_step, -1)
+                case 3:
+                    callable = self.build_schedule
+            self.set_reactive(SetupScreen.current_step, -1)
             step = -1
         self.query_one(StepperHeader).set_current(step)
         self.query_one(StepperHeader).disabled = step == -1
