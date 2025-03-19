@@ -4,9 +4,10 @@ from textual.widgets import (
     Button,
     Label,
 )
-from textual.containers import Horizontal
+from textual.containers import Horizontal, Container
 from textual.widgets.selection_list import Selection
 from textual.events import Click
+from textual.reactive import reactive
 
 
 class Step(Label):
@@ -170,8 +171,8 @@ class TreeSelectionList(SelectionList):
             self.groups[index] = []
             selections.append((group, index))
             padding = 2
-            if '[' in group and ']' in group:
-                padding = (group.index(']') - group.index('[') )// 2
+            if "[" in group and "]" in group:
+                padding = (group.index("]") - group.index("[")) // 2
             for i in range(len(elements) - 1):
                 element = elements[i]
                 selections.append((" " * padding + "├── " + element[0], element[1]))
@@ -201,3 +202,91 @@ class TreeSelectionList(SelectionList):
                         selection_list.deselect(group_idx)
                     elif all(e in current_selection for e in elements):
                         selection_list.select(group_idx)
+
+
+class ScheduleEntry(Horizontal):
+
+    DEFAULT_CSS = """
+        ScheduleEntry {
+            height: 3;
+            margin: 1;
+            & > .time {
+                width: 7;
+                & > Label {
+                    width: 100%;
+                    text-align: center;
+                }
+            }
+            & >.info {
+                width: 100%;
+            }
+        }
+    """
+
+    def __init__(
+        self,
+        start: str,
+        end: str,
+        subject: str,
+        location: str,
+        teacher: str,
+        name=None,
+        id=None,
+        classes=None,
+    ):
+        self.start = start
+        self.end = end
+        self.subject = subject
+        self.location = location
+        self.teacher = teacher
+        super().__init__(name=name, id=id, classes=classes)
+
+    def compose(self):
+        with Container(classes="time"):
+            yield Label(self.start)
+            yield Label("↓")
+            yield Label(self.end)
+        with Container(classes="info"):
+            yield Label(self.subject, variant="primary")
+            yield Label(self.teacher)
+            yield Label(self.location, variant="secondary")
+
+
+class Schedule(Container):
+    DEFAULT_CSS = """
+        Schedule {
+            width: 50;
+            margin: 0 2;
+            & > Label {
+                width: 100%;
+                margin: 1 0;
+                text-align: center;
+            }
+            & > #schedule {
+                padding: 0 1;
+                width: 100%;
+                background: $panel;
+            }
+        }
+    """
+
+    day = reactive("01.01.2000")
+    entries = reactive([], recompose=True)
+
+    def __init__(
+        self,
+        day: str = "01.01.2000",
+        entries: list[dict[str, str]] = [],
+        name=None,
+        id=None,
+        classes=None,
+    ):
+        self.day = day
+        self.entries = entries
+        super().__init__(name=name, id=id, classes=classes)
+
+    def compose(self):
+        yield Label(self.day)
+        with Container(id="schedule"):
+            for entry in self.entries:
+                yield ScheduleEntry(**entry)
