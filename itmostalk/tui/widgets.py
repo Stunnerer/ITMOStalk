@@ -281,9 +281,9 @@ class Schedule(Container):
         id=None,
         classes=None,
     ):
+        super().__init__(name=name, id=id, classes=classes)
         self.day = day
         self.entries = entries
-        super().__init__(name=name, id=id, classes=classes)
 
     def compose(self):
         yield Label(self.day)
