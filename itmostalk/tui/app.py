@@ -1,5 +1,5 @@
 from itmostalk.api import API
-from itmostalk.tui.screens import MainScreen, LoginScreen
+from itmostalk.tui.screens import SetupScreen, LoginScreen, MainScreen
 
 from textual.app import App
 
@@ -12,9 +12,16 @@ class ITMOStalkApp(App):
         self.api = API()
         super().__init__()
 
+    async def enter_setup(self, _):
+        await self.push_screen(SetupScreen())
+
+    async def action_exit_setup(self):
+        await self.switch_screen(MainScreen())
+
     async def on_mount(self) -> None:
         await self.api.load_cookies()
-        await self.push_screen(MainScreen())
-        # if not await self.api.check_auth():
-        #     await self.api.get_auth_link()
-        #     await self.push_screen(LoginScreen())
+        if not await self.api.check_auth():
+            await self.api.get_auth_link()
+            await self.push_screen(LoginScreen(), self.enter_setup)
+        else:
+            await self.push_screen(SetupScreen())
