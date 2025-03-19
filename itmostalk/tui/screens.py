@@ -220,7 +220,7 @@ class SetupScreen(Screen):
         self.ready[0] = True
         self.current_step = 0
 
-    @work(name="update_people", exclusive=True, thread=True)
+    @work(name="update_people", exclusive=True)
     async def update_people(self) -> None:
         api: API = self.app.api
         self.query_one("#status", Label).update("Получение студентов...")
@@ -252,7 +252,7 @@ class SetupScreen(Screen):
         self.ready[1] = True
         self.current_step = 1
 
-    @work(name="update_potoks", exclusive=True, thread=True)
+    @work(name="update_potoks", exclusive=True)
     async def update_potoks(self) -> None:
         self.query_one("#status", Label).update("Обновление списка потоков...")
         selected = self.query_one("#people", TreeSelectionList).selected
