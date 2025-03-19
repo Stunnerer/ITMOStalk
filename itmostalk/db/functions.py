@@ -42,7 +42,7 @@ def enable_students(students: list[int]):
 
 @db_session
 def get_enabled_students():
-    return [(s.id, s.name) for s in Student.select(lambda x: x.enabled)]
+    return [(s.id, s.name) for s in list(Student.select(lambda x: x.enabled))]
 
 
 @db_session
