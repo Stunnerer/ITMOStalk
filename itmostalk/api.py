@@ -276,6 +276,18 @@ class API:
                     group.students.add(student)
         return people
 
+    def _parse_location(self, text):
+        if "-" in text:
+            return "нет аудитории"
+        auditorium, place = text.split("<|>")
+        places = [("Кронверский", "Кронва"), ("Биржевая", "Биржа"), ("Гривцова", "Гривцова"), ("Ломоносова", "Ломо"), ("Песочная", "Песочка"), ("Чайковского", "Чайка")]
+        for sub, name in places:
+            if sub in place:
+                place = name
+                break
+        return f"{place} - {auditorium}"
+
+
     async def get_potok_schedule(self, potok_id: int) -> dict:
         # html = open("pages_for_test/potok_schedule.html")z
         html = await self.isu_get("potok_schedule", potok_id=potok_id)
@@ -320,11 +332,7 @@ class API:
                             text = td.getText(separator="<|>", strip=True)
                             text = re.sub("\n +", " ", text)
                             text = text.strip()
-                            if "-" in text:
-                                location = "нет аудитории"
-                            else:
-                                auditorium, place = text.split("<|>")
-                                location = f"{place}; ауд. {auditorium}"
+                            location = self._parse_location(text)
                             self.logger.debug("potok_schedule location: %s", location)
                         elif td.attrs.get("headers", [""])[0].startswith("ПРЕПОДАВАТЕЛЬ"):
                             text = td.a.getText(strip=True)
