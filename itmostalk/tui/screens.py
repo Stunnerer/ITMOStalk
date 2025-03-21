@@ -8,6 +8,7 @@ from itmostalk.api import API
 from itmostalk.db import functions as cache
 
 import asyncio
+import datetime
 from textual import work, on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Center
@@ -22,7 +23,7 @@ from textual.widgets import (
     Select,
     LoadingIndicator,
 )
-from textual.reactive import var
+from textual.reactive import var, reactive
 from textual.app import Binding
 
 
@@ -98,62 +99,84 @@ class MainScreen(Screen):
         }
     """
 
-    BINDINGS = ["esc", "show_menu()", "Show menu"]
+    BINDINGS = [
+        ("escape", "toggle_menu()", "Показать меню"),
+        ("left", "shift_date(-1)", "Назад"),
+        ("right", "shift_date(1)", "Вперед"),
+    ]
+
+    current_date = var(datetime.datetime.now().date())
+    student_id = var(0)
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Select(options=[("1", 1), ("2", 2)], allow_blank=False, id="students")
+        students = cache.get_enabled_students()
+        options = [(f"({s[0]}) {s[1]}", s[0]) for s in students]
+        yield Select(options=options, allow_blank=False, id="students")
+        self.current_date = datetime.datetime.now().date()
+        self.student_id = students[0][0]
+        datetime.timedelta(days=1)
         with Horizontal():
+            date = self.current_date - datetime.timedelta(days=1)
+            pairs = cache.get_student_schedule(students[0][0], date)
+            self.log(pairs)
             yield Schedule(
-                day="10.03.2025",
+                day=date.strftime("%A, %d.%m.%y"),
                 entries=[
-                    {
-                        "start": "10:00",
-                        "end": "11:30",
-                        "subject": "Английский язык",
-                        "location": "ул. Ломоносова, 9, ауд. 3108",
-                        "teacher": "Шпак В. В.",
-                    }
-                    for _ in range(5)
+                    dict(zip(["start", "end", "subject", "location", "teacher"], pair))
+                    for pair in pairs
                 ],
-                id="left",
             )
+            date += datetime.timedelta(days=1)
+            pairs = cache.get_student_schedule(students[0][0], date)
             yield Schedule(
-                day="11.03.2025",
+                day=date.strftime("%A, %d.%m.%y"),
                 entries=[
-                    {
-                        "start": "10:00",
-                        "end": "11:30",
-                        "subject": "Английский язык",
-                        "location": "ул. Ломоносова, 9, ауд. 3108",
-                        "teacher": "Шпак В. В.",
-                    }
-                    for _ in range(5)
+                    dict(zip(["start", "end", "subject", "location", "teacher"], pair))
+                    for pair in pairs
                 ],
-                id="center",
             )
+            date += datetime.timedelta(days=1)
+            pairs = cache.get_student_schedule(students[0][0], date)
             yield Schedule(
-                day="12.03.2025",
+                day=date.strftime("%A, %d.%m.%y"),
                 entries=[
-                    {
-                        "start": "10:00",
-                        "end": "11:30",
-                        "subject": "Английский язык",
-                        "location": "ул. Ломоносова, 9, ауд. 3108",
-                        "teacher": "Шпак В. В.",
-                    }
-                    for _ in range(5)
+                    dict(zip(["start", "end", "subject", "location", "teacher"], pair))
+                    for pair in pairs
                 ],
-                id="right",
             )
         yield Footer()
 
-    def action_open_menu():
+    def action_toggle_menu(self):
+        print("it werks")
         pass
+
+    def action_shift_date(self, days):
+        self.current_date += datetime.timedelta(days=days)
+
+    def watch_current_date(self, value):
+        self.update_schedule()
+    
+    def watch_student_id(self, value):
+        self.update_schedule()
+
+    def update_schedule(self):
+        date = self.current_date - datetime.timedelta(days=1)
+        student_id = self.student_id
+        for schedule_item in self.query(Schedule):
+            print(date.strftime("%A, %d.%m.%y"))
+            pairs = cache.get_student_schedule(student_id, date)
+            schedule_item.day = date.strftime("%A, %d.%m.%y")
+            schedule_item.entries = [
+                dict(zip(["start", "end", "subject", "location", "teacher"], pair))
+                for pair in pairs
+            ]
+            date += datetime.timedelta(days=1)
 
     @on(Select.Changed)
     def select_changed(self, event: Select.Changed) -> None:
         self.title = f"Расписание для студента {event.value}"
+        self.student_id = event.value
 
 
 class SetupScreen(Screen):
@@ -291,7 +314,7 @@ class SetupScreen(Screen):
             self.query_one("#status", Label).update(
                 f"Получение расписания ({index+1}/{cnt})..."
             )
-            people = cache.get_potok_people(potok_id)
+            people = cache.get_potok_schedule(potok_id)
             if not people:
                 people = await api.get_potok_schedule(potok_id)
                 await asyncio.sleep(1)  # rate limit protection
