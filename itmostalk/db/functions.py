@@ -1,5 +1,11 @@
 from itmostalk.db.bindings import *
-from datetime import date, time
+from datetime import date, time, datetime
+from pytz import timezone
+
+
+def _parse_time(t):
+    hour, minute, second = map(int, t.split(":"))
+    return time(hour, minute, second, tzinfo=timezone("Europe/Moscow"))
 
 
 @db_session
@@ -77,24 +83,35 @@ def get_potok_schedule(potok_id):
     potok = Potok.get(id=potok_id)
     if not potok:
         return None
-    return [
-        (se.name, se.start, se.end)
-        for se in list(potok.schedule.order_by(ScheduleEntry.start))
-    ]
-
-
-@db_session
-def set_potok_schedule(potok_id, schedule: list[tuple[str, date, time, time]]):
-    potok = Potok.get(id=potok_id)
-    if not potok:
-        return
-    for name, date, start, end in schedule:
-        ScheduleEntry.get(
-            potok=potok, name=name, start=start, end=end
-        ) or ScheduleEntry(potok=potok, name=name, start=start, end=end)
+    return sorted(
+        [
+            (
+                se.date,
+                _parse_time(se.start),
+                _parse_time(se.end),
+                se.subject,
+                se.location,
+                se.teacher,
+            )
+            for se in potok.schedule
+        ]
+    )
 
 
 @db_session
 def get_student_schedule(student_id, day: date):
     student = Student[student_id]
-    return [(se.start, se.end, se.subject, se.location, se.teacher) for p in student.potoks for se in p.schedule if se.date == day]
+    return sorted(
+        [
+            (
+                _parse_time(se.start),
+                _parse_time(se.end),
+                se.subject,
+                se.location,
+                se.teacher,
+            )
+            for p in student.potoks
+            for se in p.schedule
+            if se.date == day
+        ]
+    )
