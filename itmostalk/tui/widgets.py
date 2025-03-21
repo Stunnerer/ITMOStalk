@@ -1,3 +1,4 @@
+from datetime import time
 from textual.app import ComposeResult
 from textual.widgets import (
     SelectionList,
@@ -225,8 +226,8 @@ class ScheduleEntry(Horizontal):
 
     def __init__(
         self,
-        start: str,
-        end: str,
+        start: time,
+        end: time,
         subject: str,
         location: str,
         teacher: str,
@@ -243,9 +244,9 @@ class ScheduleEntry(Horizontal):
 
     def compose(self):
         with Container(classes="time"):
-            yield Label(self.start)
+            yield Label(self.start.strftime("%H:%M"))
             yield Label("↓")
-            yield Label(self.end)
+            yield Label(self.end.strftime("%H:%M"))
         with Container(classes="info"):
             yield Label(self.subject, variant="primary")
             yield Label(self.teacher)
