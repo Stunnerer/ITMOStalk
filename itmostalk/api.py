@@ -244,8 +244,8 @@ class API:
                 break
             if current_tag.name == "div":
                 if current_group:
-                    if group_name in groups:
-                        group_name += "_"
+                    while group_name in groups:
+                        group_name += " "
                     groups[group_name] = current_group
                     current_group = []
                 group_name = current_tag.findChild().text
