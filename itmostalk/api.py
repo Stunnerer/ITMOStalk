@@ -322,8 +322,9 @@ class API:
                             text = text.strip()
                             if "-" in text:
                                 location = "нет аудитории"
-                            auditorium, place = text.split("<|>")
-                            location = f"{place}; ауд. {auditorium}"
+                            else:
+                                auditorium, place = text.split("<|>")
+                                location = f"{place}; ауд. {auditorium}"
                             self.logger.debug("potok_schedule location: %s", location)
                         elif td.attrs.get("headers", [""])[0].startswith("ПРЕПОДАВАТЕЛЬ"):
                             text = td.a.getText(strip=True)
