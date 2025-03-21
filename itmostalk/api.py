@@ -96,7 +96,6 @@ class API:
                 },
                 follow_redirects=True,
             )
-            open("qwe.html", "wb").write(resp.content)
             if resp.status_code == 302:
                 self.authorized = True
                 cookies.update(resp.cookies)
