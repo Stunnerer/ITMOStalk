@@ -209,7 +209,7 @@ class ScheduleEntry(Horizontal):
 
     DEFAULT_CSS = """
         ScheduleEntry {
-            height: 3;
+            height: 4;
             margin: 1;
             & > .time {
                 width: 7;
@@ -231,6 +231,7 @@ class ScheduleEntry(Horizontal):
         subject: str,
         location: str,
         teacher: str,
+        potok: str = "qwe",
         name=None,
         id=None,
         classes=None,
@@ -240,6 +241,7 @@ class ScheduleEntry(Horizontal):
         self.subject = subject
         self.location = location
         self.teacher = teacher
+        self.potok = potok
         super().__init__(name=name, id=id, classes=classes)
 
     def compose(self):
@@ -249,6 +251,7 @@ class ScheduleEntry(Horizontal):
             yield Label(self.end.strftime("%H:%M"))
         with Container(classes="info"):
             yield Label(self.subject, variant="primary")
+            yield Label(self.potok)
             yield Label(self.teacher)
             yield Label(self.location, variant="secondary")
 

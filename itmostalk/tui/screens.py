@@ -123,7 +123,7 @@ class MainScreen(Screen):
             yield Schedule(
                 day=date.strftime("%A, %d.%m.%y"),
                 entries=[
-                    dict(zip(["start", "end", "subject", "location", "teacher"], pair))
+                    dict(zip(["start", "end", "subject", "location", "teacher", "potok"], pair))
                     for pair in pairs
                 ],
             )
@@ -132,7 +132,7 @@ class MainScreen(Screen):
             yield Schedule(
                 day=date.strftime("%A, %d.%m.%y"),
                 entries=[
-                    dict(zip(["start", "end", "subject", "location", "teacher"], pair))
+                    dict(zip(["start", "end", "subject", "location", "teacher", "potok"], pair))
                     for pair in pairs
                 ],
             )
@@ -141,7 +141,7 @@ class MainScreen(Screen):
             yield Schedule(
                 day=date.strftime("%A, %d.%m.%y"),
                 entries=[
-                    dict(zip(["start", "end", "subject", "location", "teacher"], pair))
+                    dict(zip(["start", "end", "subject", "location", "teacher", "potok"], pair))
                     for pair in pairs
                 ],
             )
@@ -168,7 +168,7 @@ class MainScreen(Screen):
             pairs = cache.get_student_schedule(student_id, date)
             schedule_item.day = date.strftime("%A, %d.%m.%y")
             schedule_item.entries = [
-                dict(zip(["start", "end", "subject", "location", "teacher"], pair))
+                dict(zip(["start", "end", "subject", "location", "teacher", "potok"], pair))
                 for pair in pairs
             ]
             date += datetime.timedelta(days=1)

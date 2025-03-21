@@ -109,6 +109,7 @@ def get_student_schedule(student_id, day: date):
                 se.subject,
                 se.location,
                 se.teacher,
+                p.name,
             )
             for p in student.potoks
             for se in p.schedule
