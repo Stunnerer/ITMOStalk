@@ -39,18 +39,3 @@ class ScheduleEntry(db.Entity):
     subject = Required(str)
     teacher = Required(str)
     location = Required(str)
-
-@db_session
-def get_student_schedule(student_id):
-    student = Student[student_id]
-    return select(
-        (p.name, se.start, se.end)
-        for p in student.potoks
-        for se in p.schedule
-    )[:]
-
-# Example usage
-if __name__ == "__main__":
-    # Create database and tables
-    db.bind(provider="sqlite", filename=":memory:", create_db=True)
-    db.generate_mapping(create_tables=True)
