@@ -292,7 +292,10 @@ class API:
         # html = open("pages_for_test/potok_schedule.html")z
         html = await self.isu_get("potok_schedule", potok_id=potok_id)
         soup = BeautifulSoup(html, "html.parser")
-        current_tag = soup.select_one("table.table.table-bordered").select_one("tr")
+        current_tag = soup.select_one("table.table.table-bordered")
+        if current_tag is None:
+            return []
+        current_tag = current_tag.select_one("tr")
         schedule = []
         while current_tag is not None:
             if current_tag.name == "tr":
