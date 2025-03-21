@@ -271,7 +271,7 @@ class Schedule(Container):
         }
     """
 
-    day = reactive("01.01.2000")
+    day = reactive("01.01.2000", recompose=True)
     entries = reactive([], recompose=True)
 
     def __init__(
