@@ -146,6 +146,7 @@ class API:
         )
         if "LOGIN" not in resp.headers["Location"]:
             nonce = int(resp.headers["Location"].rstrip(":").rsplit(":")[-1])
+            await asyncio.sleep(0.5)
             await self._update_links(nonce)
             return True
         return False
