@@ -428,6 +428,7 @@ class LoginScreen(Screen):
         button.label = "Logging in..."
         resp = await self.app.api.auth(login, password)
         if resp["success"]:
+            await self.app.api.save_cookies()
             self.dismiss()
         else:
             button.label = "Login"
