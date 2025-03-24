@@ -286,13 +286,19 @@ class API:
         if "-" in text:
             return "нет аудитории"
         auditorium, place = text.split("<|>")
-        places = [("Кронверский", "Кронва"), ("Биржевая", "Биржа"), ("Гривцова", "Гривцова"), ("Ломоносова", "Ломо"), ("Песочная", "Песочка"), ("Чайковского", "Чайка")]
+        places = [
+            ("Кронверский", "Кронва"),
+            ("Биржевая", "Биржа"),
+            ("Гривцова", "Гривцова"),
+            ("Ломоносова", "Ломо"),
+            ("Песочная", "Песочка"),
+            ("Чайковского", "Чайка"),
+        ]
         for sub, name in places:
             if sub in place:
                 place = name
                 break
         return f"{place} - {auditorium}"
-
 
     async def get_potok_schedule(self, potok_id: int) -> dict:
         # html = open("pages_for_test/potok_schedule.html")z
@@ -343,14 +349,23 @@ class API:
                             text = text.strip()
                             location = self._parse_location(text)
                             self.logger.debug("potok_schedule location: %s", location)
-                        elif td.attrs.get("headers", [""])[0].startswith("ПРЕПОДАВАТЕЛЬ"):
+                        elif td.attrs.get("headers", [""])[0].startswith(
+                            "ПРЕПОДАВАТЕЛЬ"
+                        ):
                             text = td.a.getText(strip=True)
                             text = re.sub("\n +", " ", text)
                             text = text.strip()
                             teacher = text
                             self.logger.debug("potok_schedule teacher: %s", teacher)
                         td = td.find_next_sibling()
-                    entry = dict(date=day, start=start, end=end, subject=name, teacher=teacher, location=location)
+                    entry = dict(
+                        date=day,
+                        start=start,
+                        end=end,
+                        subject=name,
+                        teacher=teacher,
+                        location=location,
+                    )
                     schedule.append(entry)
                     current_tag = current_tag.find_next_sibling()
             elif current_tag.name == "thead":
