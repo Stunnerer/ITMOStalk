@@ -93,13 +93,12 @@ class API:
                     "password": password,
                     "rememberMe": "on",
                     "credentialId": "",
-                },
-                follow_redirects=True,
+                }
             )
             if resp.status_code == 302:
                 self.authorized = True
                 cookies.update(resp.cookies)
-                resp = await client.get(resp.headers["Location"], headers=self.headers)
+                resp = await client.get(resp.headers["Location"], headers=self.headers, follow_redirects=True)
                 cookies.update(resp.cookies)
                 nonce = int(resp.request.url.query.rsplit(b":")[-1].decode())
                 await self._update_links(nonce)
