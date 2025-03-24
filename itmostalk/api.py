@@ -148,12 +148,16 @@ class API:
             await self._update_links(nonce)
             return True
         return False
-    
+
     async def isu_get(self, link, **format):
         if link not in self.links or self._count > 10:
             await self.update_links()
             await asyncio.sleep(0.5)
-        resp = await self.client.get(self.links[link].format(**format), follow_redirects=True)
+        resp = await self.client.get(
+            self.links[link].format(**format), follow_redirects=True
+        )
+        if self._count % 2:
+            await asyncio.sleep(0.7)
         return await resp.aread()
 
     async def get_group_list(self) -> dict[str, list[tuple[str, str]]]:
