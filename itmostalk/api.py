@@ -204,7 +204,10 @@ class API:
 
     def get_people(self, html):
         soup = BeautifulSoup(html, "html.parser")
-        tbody = soup.select_one("table.table.table-bordered").select_one("tbody")
+        tbody = soup.select_one("table.table.table-bordered")
+        if not tbody:
+            return []
+        tbody = tbody.select_one("tbody")
         rows = tbody.findChildren("tr")
         for row in rows:
             uid, name = 0, ""
