@@ -307,7 +307,6 @@ class SetupScreen(Screen):
             people = cache.get_potok_people(potok_id)
             if not people:
                 people = await api.get_people_from_potok(potok_id)
-                await asyncio.sleep(1)  # rate limit protection
 
         self.query_one("#status", Label).update(f"Получение расписания (0/{cnt})...")
         for index, potok_id in enumerate(potoks_to_fetch):
@@ -317,7 +316,6 @@ class SetupScreen(Screen):
             people = cache.get_potok_schedule(potok_id)
             if not people:
                 people = await api.get_potok_schedule(potok_id)
-                await asyncio.sleep(1)  # rate limit protection
 
         self.ready[3] = True
         self.current_step = 3
