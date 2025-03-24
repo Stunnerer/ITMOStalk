@@ -19,14 +19,16 @@ logging.basicConfig(
 async def run_tui():
     app = ITMOStalkApp()
     path = Path() / "data" / "cache.db"
+    path.parent.mkdir(parents=True, exist_ok=True)
     db.bind("sqlite", filename=str(path.absolute()), create_db=True)
     db.generate_mapping(create_tables=True)
     await app.run_async()
 
 
 async def run_test():
-    api = API(headers=HEADERS)
+    api = API()
     path = Path() / "data" / "cache.db"
+    path.parent.mkdir(parents=True, exist_ok=True)
     db.bind("sqlite", filename=str(path.absolute()), create_db=True)
     db.generate_mapping(create_tables=True)
     if not await api.load_cookies():
