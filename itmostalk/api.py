@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from faker import Faker
 import logging
 
-from itmostalk.db.bindings import Group, Info, Potok, Student, ScheduleEntry, db_session
+from itmostalk.db.bindings import Group, Potok, Student, db_session
 from itmostalk.db import functions as cache
 
 
