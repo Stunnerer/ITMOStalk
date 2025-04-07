@@ -85,7 +85,8 @@ class API:
         auth_link = self.links["auth"]
         # authorize using itmo id
         try:
-            resp = await client.post(
+            req = client.build_request(
+                "POST",
                 auth_link,
                 headers=self.headers,
                 data={
@@ -95,11 +96,17 @@ class API:
                     "credentialId": "",
                 }
             )
+            resp = await client.send(req)
             if resp.status_code == 302:
                 self.authorized = True
                 cookies.update(resp.cookies)
-                resp = await client.get(resp.headers["Location"], headers=self.headers, follow_redirects=True)
-                cookies.update(resp.cookies)
+                await asyncio.sleep(0.5)
+                while resp.status_code == 302:
+                    req = client._build_redirect_request(req, resp)
+                    resp = await client.send(req)
+                    cookies.update(resp.cookies)
+                    self.logger.info("%s", resp.url)
+                    await asyncio.sleep(0.1)
                 nonce = int(resp.request.url.query.rsplit(b":")[-1].decode())
                 await self._update_links(nonce)
             else:
