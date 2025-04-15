@@ -1,30 +1,15 @@
-from itmostalk.tui.widgets import (
-    TreeSelectionList,
-    StepperHeader,
-    StepperFooter,
-    Schedule,
-)
-from itmostalk.api import API
-from itmostalk.db import functions as cache
-
-import asyncio
-import datetime
 from textual import work, on
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, Center
+from textual.containers import Container, Center
 from textual.screen import Screen
-from textual.widgets import (
-    Button,
-    ContentSwitcher,
-    Label,
-    Input,
-    Header,
-    Footer,
-    Select,
-    LoadingIndicator,
-)
+from textual.widgets import Button, ContentSwitcher, Label, LoadingIndicator
 from textual.reactive import var
-from textual.app import Binding
+
+from itmostalk.api import API
+from itmostalk.db import functions as cache
+from itmostalk.tui.widgets import TreeSelectionList, StepperHeader, StepperFooter
+
+import asyncio
 
 
 class LoadingContainer(Container):
@@ -88,117 +73,6 @@ class SelectPeopleContainer(Container):
         )
 
 
-class MainScreen(Screen):
-    CSS = """
-        MainScreen {
-            width: 100%;
-            height: 100%;
-            & > Horizontal {
-                align: center top;
-            }
-        }
-    """
-
-    BINDINGS = [
-        ("escape", "toggle_menu()", "Показать меню"),
-        ("left", "shift_date(-1)", "Назад"),
-        ("right", "shift_date(1)", "Вперед"),
-    ]
-
-    current_date = var(datetime.datetime.now().date())
-    student_id = var(0)
-
-    def compose(self) -> ComposeResult:
-        yield Header()
-        students = cache.get_enabled_students()
-        options = [(f"({s[0]}) {s[1]}", s[0]) for s in students]
-        yield Select(options=options, allow_blank=False, id="students")
-        self.current_date = datetime.datetime.now().date()
-        self.student_id = students[0][0]
-        datetime.timedelta(days=1)
-        with Horizontal():
-            date = self.current_date - datetime.timedelta(days=1)
-            pairs = cache.get_student_schedule(students[0][0], date)
-            self.log(pairs)
-            yield Schedule(
-                day=date.strftime("%A, %d.%m.%y"),
-                entries=[
-                    dict(
-                        zip(
-                            ["start", "end", "subject", "location", "teacher", "potok"],
-                            pair,
-                        )
-                    )
-                    for pair in pairs
-                ],
-            )
-            date += datetime.timedelta(days=1)
-            pairs = cache.get_student_schedule(students[0][0], date)
-            yield Schedule(
-                day=date.strftime("%A, %d.%m.%y"),
-                entries=[
-                    dict(
-                        zip(
-                            ["start", "end", "subject", "location", "teacher", "potok"],
-                            pair,
-                        )
-                    )
-                    for pair in pairs
-                ],
-            )
-            date += datetime.timedelta(days=1)
-            pairs = cache.get_student_schedule(students[0][0], date)
-            yield Schedule(
-                day=date.strftime("%A, %d.%m.%y"),
-                entries=[
-                    dict(
-                        zip(
-                            ["start", "end", "subject", "location", "teacher", "potok"],
-                            pair,
-                        )
-                    )
-                    for pair in pairs
-                ],
-            )
-        yield Footer()
-
-    def action_toggle_menu(self):
-        print("it werks")
-        pass
-
-    def action_shift_date(self, days):
-        self.current_date += datetime.timedelta(days=days)
-
-    def watch_current_date(self, value):
-        self.update_schedule()
-
-    def watch_student_id(self, value):
-        self.update_schedule()
-
-    def update_schedule(self):
-        date = self.current_date - datetime.timedelta(days=1)
-        student_id = self.student_id
-        for schedule_item in self.query(Schedule):
-            print(date.strftime("%A, %d.%m.%y"))
-            pairs = cache.get_student_schedule(student_id, date)
-            schedule_item.day = date.strftime("%A, %d.%m.%y")
-            schedule_item.entries = [
-                dict(
-                    zip(
-                        ["start", "end", "subject", "location", "teacher", "potok"],
-                        pair,
-                    )
-                )
-                for pair in pairs
-            ]
-            date += datetime.timedelta(days=1)
-
-    @on(Select.Changed)
-    def select_changed(self, event: Select.Changed) -> None:
-        self.title = f"Расписание для студента {event.value}"
-        self.student_id = event.value
-
-
 class SetupScreen(Screen):
     CSS = """
         SetupScreen {
@@ -249,6 +123,8 @@ class SetupScreen(Screen):
 
     @on(Button.Pressed, "#exit_setup")
     async def exit_setup(self, event: Button.Pressed) -> None:
+        from .main import MainScreen
+
         await self.app.push_screen(MainScreen())
 
     @work(name="update_groups", exclusive=True)
@@ -379,84 +255,3 @@ class SetupScreen(Screen):
 
     def on_mount(self):
         self.update_groups()
-
-
-class LoginScreen(Screen):
-    CSS = """
-        .centered {
-            width: 100%;
-            height: 100%;
-            align: center middle;
-        }
-        
-        .title {
-            text-align: center;
-            margin-bottom: 1;
-        }
-
-        #error_message {
-            color: red;
-            text-style: bold;
-            text-align: center;
-            margin-bottom: 1;
-        }
-
-        #login, #password {
-            margin-bottom: 1;
-        }
-
-        .login-form > * {
-            width: 50%;
-        }
-        
-        .button-container {
-            align: center top;
-            height: auto;
-        }
-
-        Button {
-            width: 40;
-            margin: 10;
-            margin-top: 0;
-            margin-bottom: 0;
-            text-align: center;
-        }
-    """
-    BINDINGS = [Binding("enter", "submit()", "Submit", priority=True)]
-
-    def compose(self) -> ComposeResult:
-        with Container(classes="centered"):
-            yield Center(
-                Label("ITMOStalk", classes="title"),
-                Input(id="login", placeholder="Email"),
-                Input(id="password", placeholder="Password", password=True),
-                Label(id="error_message"),
-                classes="login-form",
-            )
-            yield Horizontal(
-                Button("Login", id="login_button"),
-                classes="button-container",
-            )
-
-    async def action_submit(self) -> None:
-        await self.handle_login()
-
-    async def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "login_button":
-            await self.handle_login()
-
-    async def handle_login(self) -> None:
-        login = self.query_one("#login", Input).value
-        password = self.query_one("#password", Input).value
-        button = self.query_one("#login_button", Button)
-        button.disabled = True
-        button.label = "Logging in..."
-        resp = await self.app.api.auth(login, password)
-        if resp["success"]:
-            await self.app.api.save_cookies()
-            self.dismiss()
-        else:
-            button.label = "Login"
-            button.disabled = False
-            label = self.query_one("#error_message", Label)
-            label.update(resp["message"])
