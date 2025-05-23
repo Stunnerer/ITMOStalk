@@ -106,7 +106,7 @@ class API:
                     resp = await client.send(req)
                     cookies.update(resp.cookies)
                     self.logger.info("%s", resp.url)
-                    await asyncio.sleep(0.1)
+                    await asyncio.sleep(1)
                 nonce = int(resp.request.url.query.rsplit(b":")[-1].decode())
                 await self._update_links(nonce)
             else:
