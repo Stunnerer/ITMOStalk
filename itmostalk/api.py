@@ -72,7 +72,7 @@ class API:
 
         # find auth link
         auth_link = re.search(
-            r"kc-form-login\".+?action=\"(.+?)\"", resp.text, re.MULTILINE
+            r'"loginAction": "(.+?)"', resp.text, re.MULTILINE
         ).group(1)
         self.links["auth"] = unescape(auth_link)
 
