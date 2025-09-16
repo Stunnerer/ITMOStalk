@@ -12,7 +12,8 @@ from bs4 import BeautifulSoup
 from faker import Faker
 import logging
 
-from itmostalk.db.bindings import Group, Potok, Student, db_session
+from itmostalk.db.bindings import Group, Potok, ScheduleEntry, Student
+from itmostalk.db.functions import Session
 from itmostalk.db import functions as cache
 
 
@@ -238,10 +239,12 @@ class API:
         # html = open("pages_for_test/group_people.html")
         html = await self.isu_get("group_students", group_id=group_id)
         people = list(self.get_people(html))
-        with db_session:
-            group = Group.get(id=group_id)
+        with Session.begin() as session:
+            group: Group = session.query(Group).get(group_id)  # type: ignore
             for uid, name in people:
-                student = Student.get(id=uid) or Student(id=uid, name=name)
+                student = session.query(Student).get(uid)
+                if not student:
+                    session.add(student := Student(id=uid, name=name))
                 group.students.add(student)
         return people
 
@@ -286,12 +289,12 @@ class API:
         # html = open("pages_for_test/potok_people.html")
         html = await self.isu_get("potok_students", potok_id=potok_id)
         people = list(self.get_people(html))
-        with db_session:
-            group = Potok.get(id=potok_id)
-            if group:
+        with Session.begin() as session:
+            potok: Potok = session.query(Potok).get(potok_id)  # type: ignore
+            if potok:
                 for uid, name in people:
-                    student = Student.get(id=uid) or Student(id=uid, name=name)
-                    group.students.add(student)
+                    student = session.query(Student).filter(Student.id==uid).one_or_none() or Student(id=uid, name=name)
+                    potok.students.add(student)
         return people
 
     def _parse_location(self, text):
@@ -312,7 +315,7 @@ class API:
                 break
         return f"{place} - {auditorium}"
 
-    async def get_potok_schedule(self, potok_id: int) -> dict:
+    async def get_potok_schedule(self, potok_id: int) -> list[dict[str, str | int]]:
         # html = open("pages_for_test/potok_schedule.html")z
         html = await self.isu_get("potok_schedule", potok_id=potok_id)
         soup = BeautifulSoup(html, "html.parser")
@@ -384,9 +387,11 @@ class API:
                 current_tag = current_tag.find_next_sibling()
             else:
                 current_tag = current_tag.select_one("tr")
-        with db_session:
-            potok = Potok.get(id=potok_id)
+        with Session.begin() as session:
+            potok = session.query(Potok).get(potok_id)
             if potok:
                 for entry in schedule:
-                    potok.schedule.create(**entry)
+                    schentry = ScheduleEntry(**entry)
+                    potok.schedule.append(schentry)
+
         return schedule

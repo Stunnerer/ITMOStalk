@@ -4,10 +4,7 @@ import sys
 
 from itmostalk.api import API
 from itmostalk.tui.app import ITMOStalkApp
-from itmostalk.db.bindings import *
-from itmostalk.db import functions as cache
-
-from pathlib import Path
+from itmostalk.db.bindings import Base
 
 logging.basicConfig(
     format="%(levelname)s [%(asctime)s] %(name)s - %(message)s",
@@ -18,19 +15,11 @@ logging.basicConfig(
 
 async def run_tui():
     app = ITMOStalkApp()
-    path = Path() / "data" / "cache.db"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    db.bind("sqlite", filename=str(path.absolute()), create_db=True)
-    db.generate_mapping(create_tables=True)
     await app.run_async()
 
 
 async def run_test():
     api = API()
-    path = Path() / "data" / "cache.db"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    db.bind("sqlite", filename=str(path.absolute()), create_db=True)
-    db.generate_mapping(create_tables=True)
     if not await api.load_cookies():
         await api.get_auth_link()
         print("throttling")

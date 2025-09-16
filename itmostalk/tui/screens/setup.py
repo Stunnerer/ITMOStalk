@@ -212,12 +212,12 @@ class SetupScreen(Screen):
             people = cache.get_potok_schedule(potok_id)
             if not people:
                 people = await api.get_potok_schedule(potok_id)
-        with cache.db_session:
-            info = cache.Info.get(name="setup_complete")
+        with cache.Session.begin() as session:
+            info = session.query(cache.Info).filter(cache.Info.name=="setup_complete")
             if info:
-                info.value = "true"
+                info.update({"value": "true"})
             else:
-                cache.Info(name="setup_complete", value="true")
+                session.add(cache.Info(name="setup_complete", value="true"))
         self.ready[3] = True
         self.current_step = 3
 
