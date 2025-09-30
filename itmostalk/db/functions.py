@@ -72,6 +72,14 @@ def get_potok_people(potok_id):
             return None
         return [(s.id, s.name) for s in list(potok.students.order_by(Student.name))]
 
+def get_parsed_potoks():
+    with Session.begin() as session:
+        potoks = []
+        for potok in session.query(Potok).order_by(Potok.discipline).all():
+            if potok.schedule:
+                potoks.append((potok.name, potok.id))
+        return potoks
+
 def get_potok_schedule(potok_id):
     with Session.begin() as session:
         potok = session.query(Potok).get(potok_id)
