@@ -6,7 +6,7 @@ from textual.app import App
 
 
 class ITMOStalkApp(App):
-    api: API = None
+    api: API
     MAX_SELECTION = 20
 
     def __init__(self):
