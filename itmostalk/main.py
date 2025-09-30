@@ -7,6 +7,7 @@ from itmostalk.tui.app import ITMOStalkApp
 from itmostalk.db.bindings import Base
 
 logging.basicConfig(
+    filename="data/log.txt",
     format="%(levelname)s [%(asctime)s] %(name)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     level=logging.DEBUG,
