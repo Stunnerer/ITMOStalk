@@ -9,8 +9,6 @@ from itmostalk.api import API
 from itmostalk.db import functions as cache
 from itmostalk.tui.widgets import TreeSelectionList, StepperHeader, StepperFooter
 
-import asyncio
-
 
 class LoadingContainer(Container):
     DEFAULT_CSS = """
@@ -38,7 +36,6 @@ class SelectGroupsContainer(Container):
         self.query_one(".title", Label).update(
             f"Select groups ({count}/{self.app.MAX_SELECTION})"
         )
-        self.screen.ready[1] = False
 
 
 class SelectPotoksContainer(Container):
@@ -55,7 +52,6 @@ class SelectPotoksContainer(Container):
         self.query_one(".title", Label).update(
             f"Select potoks ({count}/{self.app.MAX_SELECTION})"
         )
-        self.screen.ready[3] = False
 
 
 class SelectPeopleContainer(Container):
@@ -157,7 +153,6 @@ class SetupScreen(Screen):
             result = cache.get_group_people(group)
             if not result:
                 result = await api.get_people_from_group(group)
-                await asyncio.sleep(1)  # rate limit protection
             people = []
             for person in result:
                 people.append(
@@ -213,13 +208,20 @@ class SetupScreen(Screen):
             if not people:
                 people = await api.get_potok_schedule(potok_id)
         with cache.Session.begin() as session:
-            info = session.query(cache.Info).filter(cache.Info.name=="setup_complete")
+            info = session.query(cache.Info).filter(cache.Info.name == "setup_complete")
             if info:
                 info.update({"value": "true"})
             else:
                 session.add(cache.Info(name="setup_complete", value="true"))
         self.ready[3] = True
         self.current_step = 3
+
+    @on(TreeSelectionList.SelectionToggled)
+    def update_ready(self, event: TreeSelectionList.SelectionToggled):
+        if event.control.id == "groups":
+            self.ready[1] = False
+        if event.control.id == "potoks":
+            self.ready[3] = False
 
     def watch_current_step(self, step: int):
         callable = None
