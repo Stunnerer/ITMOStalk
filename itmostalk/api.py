@@ -19,10 +19,10 @@ from itmostalk.db import functions as cache
 
 class API:
 
-    client: httpx.AsyncClient = None
-    headers: dict[str, str] = None
-    links: dict[str, str] = None
-    faker: Faker = None
+    client: httpx.AsyncClient
+    headers: dict[str, str]
+    links: dict[str, str]
+    faker: Faker
     authorized = False
 
     def __init__(self, headers=None):
@@ -41,7 +41,7 @@ class API:
                 "Sec-Fetch-Mode": "navigate",
                 "Sec-Fetch-Site": "cross-site",
                 "Sec-GPC": "1",
-                "Upgrade-Insecure-Requests": "1"
+                "Upgrade-Insecure-Requests": "1",
             }
         else:
             self.headers = headers
@@ -77,9 +77,11 @@ class API:
         cookies.update(resp.cookies)
 
         # find auth link
+        # fmt: off
         auth_link = re.search(
             r'"loginAction": "(.+?)"', resp.text, re.MULTILINE
         ).group(1)
+        # fmt: on
         self.links["auth"] = unescape(auth_link)
 
     async def auth(self, email, password):
@@ -100,7 +102,7 @@ class API:
                     "password": password,
                     "rememberMe": "on",
                     "credentialId": "",
-                }
+                },
             )
             resp = await client.send(req)
             if resp.status_code == 302:
@@ -293,7 +295,9 @@ class API:
             potok: Potok = session.query(Potok).get(potok_id)  # type: ignore
             if potok:
                 for uid, name in people:
-                    student = session.query(Student).filter(Student.id==uid).one_or_none() or Student(id=uid, name=name)
+                    student = session.query(Student).filter(
+                        Student.id == uid
+                    ).one_or_none() or Student(id=uid, name=name)
                     potok.students.add(student)
         return people
 
