@@ -29,24 +29,34 @@ def set_group_list(groups: dict):
                     session.add(Group(id=group_id, name=group_name, faculty=faculty))
         session.commit()
 
+
 def get_group_people(group_id):
     with Session.begin() as session:
-        group = session.query(Group).filter(Group.id==group_id).one_or_none()
+        group = session.query(Group).filter(Group.id == group_id).one_or_none()
         if not group:
             return None
         return [(s.id, s.name) for s in list(group.students.order_by(Student.name))]
 
+
 def enable_students(students: list[int]):
     with Session.begin() as session:
-        session.query(Student).filter(Student.id.in_(students)).update({Student.enabled: True})
+        session.query(Student).filter(Student.id.in_(students)).update(
+            {Student.enabled: True}
+        )
+
 
 def disable_students(students: list[int]):
     with Session.begin() as session:
-        session.query(Student).filter(Student.id.in_(students)).update({Student.enabled: False})
+        session.query(Student).filter(Student.id.in_(students)).update(
+            {Student.enabled: False}
+        )
+
 
 def get_enabled_students() -> list[tuple[int, str]]:
     with Session.begin() as session:
-        return [(s.id, s.name) for s in session.query(Student).filter(Student.enabled).all()]
+        students = session.query(Student).filter(Student.enabled).all()
+        return [(student.id, student.name) for student in students]
+
 
 def get_potok_list() -> dict[str, list[tuple[str, int]]]:
     with Session.begin() as session:
@@ -54,6 +64,7 @@ def get_potok_list() -> dict[str, list[tuple[str, int]]]:
         for potok in session.query(Potok).order_by(Potok.discipline).all():
             potoks.setdefault(potok.discipline, []).append((potok.name, potok.id))
         return potoks
+
 
 def set_potok_list(potoks: dict[str, list[tuple[str, int]]]):
     with Session.begin() as session:
@@ -63,7 +74,10 @@ def set_potok_list(potoks: dict[str, list[tuple[str, int]]]):
                 if potok:
                     potok.set(name=potok_name, discipline=discipline)
                 else:
-                    session.add(Potok(id=potok_id, name=potok_name, discipline=discipline))
+                    session.add(
+                        Potok(id=potok_id, name=potok_name, discipline=discipline)
+                    )
+
 
 def get_potok_people(potok_id):
     with Session.begin() as session:
@@ -99,6 +113,7 @@ def get_potok_schedule(potok_id):
             ]
         )
 
+
 def get_student_schedule(student_id, day: date):
     with Session.begin() as session:
         student = session.query(Student).get(student_id)
@@ -120,11 +135,15 @@ def get_student_schedule(student_id, day: date):
             ]
         )
 
+
 def get_groups_with_students() -> dict[str, tuple[str, str, list[str]]]:
     with Session.begin() as session:
         groups_with_students = {}
         for group in session.query(Group).all():
-            students = [(s.id, s.name, s.enabled) for s in list(group.students.order_by(Student.name))]
+            students = [
+                (s.id, s.name, s.enabled)
+                for s in list(group.students.order_by(Student.name))
+            ]
             if students:
                 groups_with_students[group.name] = students
         return groups_with_students
