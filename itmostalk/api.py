@@ -341,14 +341,16 @@ class API:
                             text = td.getText(strip=True)
                             time_segments = re.findall(r"(\d{1,2}:\d{2})", text)
                             # self.logger.debug("potok_schedule text: %s, segments: %s", text, time_segments)
-                            # fmt: off
-                            start = datetime.datetime.strptime(
-                                time_segments[0], "%H:%M"
-                            ).replace(tzinfo=pytz.timezone("Europe/Moscow")).timetz()
-                            end = datetime.datetime.strptime(
-                                time_segments[1], "%H:%M"
-                            ).replace(tzinfo=pytz.timezone("Europe/Moscow")).timetz()
-                            # fmt: on
+                            start = (
+                                datetime.datetime.strptime(time_segments[0], "%H:%M")
+                                .replace(tzinfo=pytz.timezone("Europe/Moscow"))
+                                .timetz()
+                            )
+                            end = (
+                                datetime.datetime.strptime(time_segments[1], "%H:%M")
+                                .replace(tzinfo=pytz.timezone("Europe/Moscow"))
+                                .timetz()
+                            )
                             self.logger.debug(
                                 "potok_schedule time: %s ~ %s", start, end
                             )
