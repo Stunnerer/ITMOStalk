@@ -221,10 +221,10 @@ class API:
         if not tbody:
             return []
         tbody = tbody.select_one("tbody")
-        rows = tbody.findChildren("tr")
+        rows = tbody.find_all("tr")
         for row in rows:
             uid, name = 0, ""
-            for td in row.findChildren("td"):
+            for td in row.find_all("td"):
                 header = td.attrs["headers"][0]
                 if "ИД" in header:
                     uid = int(td.text)
@@ -256,7 +256,7 @@ class API:
         group_name = None
         current_group = []
         current_tag = soup.select_one("span.i_dummy>div.note")
-        group_name = current_tag.findChild().text
+        group_name = current_tag.find().text
         group_name = re.sub("\n +", " ", group_name)
         group_name = re.sub(r"\[.+?\] ", "", group_name)
         while True:
@@ -269,7 +269,7 @@ class API:
                         group_name += " "
                     groups[group_name] = current_group
                     current_group = []
-                group_name = current_tag.findChild().text
+                group_name = current_tag.find().text
                 group_name = re.sub("\n +", " ", group_name)
                 group_name = re.sub(r"\[.+?\] ", "", group_name)
             else:
@@ -328,7 +328,7 @@ class API:
             if current_tag.name == "tr":
                 td = current_tag.select_one("td")
                 if td.attrs.get("id", "") == "ДЕНЬ":
-                    h4 = td.findChild("h4")
+                    h4 = td.find("h4")
                     day = h4.text.strip().split(",")[0]
                     self.logger.debug("potok_schedule day: %s", day)
                     day = datetime.datetime.strptime(day, "%d.%m.%Y").date()
