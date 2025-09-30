@@ -12,9 +12,6 @@ engine = create_engine(f"sqlite:///{path.absolute()}")
 Session = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 
-def _parse_time(t):
-    hour, minute, second = map(int, t.split(":"))
-    return time(hour, minute, second, tzinfo=timezone("Europe/Moscow"))
 
 def get_group_list():
     with Session.begin() as session:
@@ -84,8 +81,8 @@ def get_potok_schedule(potok_id):
             [
                 (
                     se.date,
-                    _parse_time(se.start),
-                    _parse_time(se.end),
+                    se.start,
+                    se.end,
                     se.subject,
                     se.location,
                     se.teacher,
@@ -102,8 +99,8 @@ def get_student_schedule(student_id, day: date):
         return sorted(
             [
                 (
-                    _parse_time(se.start),
-                    _parse_time(se.end),
+                    se.start,
+                    se.end,
                     se.subject,
                     se.location,
                     se.teacher,
