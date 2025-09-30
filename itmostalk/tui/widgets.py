@@ -10,6 +10,8 @@ from textual.widgets.selection_list import Selection
 from textual.events import Click
 from textual.reactive import reactive
 
+from typing import Any
+
 
 class Step(Label):
     DEFAULT_CSS = """
@@ -280,7 +282,7 @@ class Schedule(Container):
     def __init__(
         self,
         day: str = "01.01.2000",
-        entries: list[dict[str, str]] = [],
+        entries: list[dict[str, Any]] = [],
         name=None,
         id=None,
         classes=None,
