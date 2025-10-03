@@ -86,11 +86,11 @@ def get_potok_people(potok_id):
             return None
         return [(s.id, s.name) for s in list(potok.students.order_by(Student.name))]
 
-def get_parsed_potoks():
+def get_parsed_potoks() -> list[tuple[str, str]]:
     with Session.begin() as session:
         potoks = []
         for potok in session.query(Potok).order_by(Potok.discipline).all():
-            if potok.schedule:
+            if potok.schedule.count() > 0:
                 potoks.append((potok.name, potok.id))
         return potoks
 
