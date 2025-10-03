@@ -155,9 +155,27 @@ class MenuModal(ModalScreen):
             self.query_one("#status", Label).update(
                 f"Получение расписания ({index+1}/{cnt})..."
             )
-            people = cache.get_potok_schedule(potok_id)
-            if not people:
-                people = await api.get_potok_schedule(potok_id)
+            schedule = cache.get_potok_schedule(potok_id)
+            if not schedule:
+                schedule = await api.get_potok_schedule(potok_id)
+
+        self.screen.dismiss()
+        await self.app.screen.recompose()
+
+    @work(name="update_schedule", exclusive=True)
+    async def update_schedule(self) -> None:
+        api: API = self.app.api
+        potoks_to_fetch = self.query_one("#potoks", TreeSelectionList).selected
+        potoks_to_fetch = list(filter(lambda x: x > 0, potoks_to_fetch))
+        if not potoks_to_fetch:
+            return
+        cnt = len(potoks_to_fetch)
+        self.query_one("#status", Label).update(f"Получение расписания (0/{cnt})...")
+        for index, potok_id in enumerate(potoks_to_fetch):
+            self.query_one("#status", Label).update(
+                f"Получение расписания ({index+1}/{cnt})..."
+            )
+            await api.get_potok_schedule(potok_id)
 
         self.screen.dismiss()
         await self.app.screen.recompose()
@@ -244,8 +262,12 @@ class MenuModal(ModalScreen):
             self.query_one(ContentSwitcher).current = "potoks-container"
             self.query_one(SelectPotoksContainer).query_one(TreeSelectionList).focus()
         elif item_id == "refresh":
-            self.app.pop_screen()
-            # TODO: Add refresh logic here
+            potok_selection_list = self.query_one("#potoks", TreeSelectionList)
+            potok_selection_list.deselect_all()
+            for potok_name, potok_id in cache.get_parsed_potoks():
+                potok_selection_list.select(potok_id)
+            self.query_one(ContentSwitcher).current = "status"
+            self.update_schedule()
         elif item_id == "setup":
             from .setup import SetupScreen
 
