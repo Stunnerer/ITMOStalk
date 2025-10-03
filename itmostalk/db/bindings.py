@@ -1,5 +1,15 @@
 # Migration to SQLAlchemy
-from sqlalchemy import Column, Integer, String, Boolean, Date, Time, ForeignKey, Table
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    Date,
+    Time,
+    ForeignKey,
+    Table,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import date, time
 
@@ -71,3 +81,6 @@ class ScheduleEntry(Base):
     teacher = Column(String)
     location = Column(String)
     potok = relationship("Potok", back_populates="schedule")
+    __table_args__ = (
+        UniqueConstraint("potok_id", "date", "start", "end", "subject", "teacher"),
+    )

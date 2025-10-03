@@ -397,6 +397,8 @@ class API:
             potok = session.query(Potok).get(potok_id)
             if potok:
                 for entry in schedule:
+                    if session.query(ScheduleEntry).get(entry):
+                        continue
                     schentry = ScheduleEntry(**entry)
                     potok.schedule.append(schentry)
 
