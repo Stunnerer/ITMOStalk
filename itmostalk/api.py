@@ -138,7 +138,6 @@ class API:
         resp = await client.get(
             "https://isu.ifmo.ru/", headers=self.headers, follow_redirects=True
         )
-        await resp.aread()
         self._count = 0
         nonce = int(resp.request.url.query.decode().rstrip(":").rsplit(":")[-1])
         await self._update_links(nonce)
