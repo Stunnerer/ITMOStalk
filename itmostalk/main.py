@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+import os
 
 from itmostalk.api import API
 from itmostalk.tui.app import ITMOStalkApp
@@ -41,6 +42,7 @@ async def run_test():
 
 
 async def main():
+    os.makedirs("data", exist_ok=True)
     if "test" in sys.argv:
         await run_test()
     else:

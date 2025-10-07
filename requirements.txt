@@ -4,3 +4,4 @@ pony
 bs4
 pytz
 faker
+sqlalchemy
