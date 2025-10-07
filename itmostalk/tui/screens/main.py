@@ -235,7 +235,7 @@ class MenuModal(ModalScreen):
 
         for faculty, fgroups in groups.items():
             for group_name, group_id in fgroups:
-                if group_name in group_students:
+                if group_name in fgroups:
                     group_selection_list.select(group_id)
 
     @work(exclusive=True)

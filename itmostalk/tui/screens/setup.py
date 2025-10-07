@@ -100,7 +100,7 @@ class SetupScreen(Screen):
     """
 
     current_step = var(-1, init=False)
-    steps = ["groups", "people", "potoks", "schedule", "loading"]
+    steps = ["groups_container", "people_container", "potoks_container", "schedule", "loading"]
     ready = [False] * 4
 
     def compose(self):
@@ -109,9 +109,9 @@ class SetupScreen(Screen):
         )
         with ContentSwitcher(id="contentswitcher", initial="loading"):
             yield LoadingContainer(id="loading")
-            yield SelectGroupsContainer(id="groups")
-            yield SelectPeopleContainer(id="people")
-            yield SelectPotoksContainer(id="potoks")
+            yield SelectGroupsContainer(id="groups_container")
+            yield SelectPeopleContainer(id="people_container")
+            yield SelectPotoksContainer(id="potoks_container")
             with Center(id="schedule"):
                 yield Label("Расписание построено!")
                 yield Button("Посмотреть расписание", id="exit_setup")
