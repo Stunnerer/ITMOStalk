@@ -249,9 +249,9 @@ class API:
         html = await self.isu_get("group_students", group_id=group_id)
         people = list(self.get_people(html))
         with Session.begin() as session:
-            group: Group = session.query(Group).get(group_id)  # type: ignore
+            group: Group = session.get(Group, group_id)  # type: ignore
             for uid, name in people:
-                student = session.query(Student).get(uid)
+                student = session.get(Student, uid)
                 if not student:
                     session.add(student := Student(id=uid, name=name))
                 group.students.add(student)
@@ -299,12 +299,10 @@ class API:
         html = await self.isu_get("potok_students", potok_id=potok_id)
         people = list(self.get_people(html))
         with Session.begin() as session:
-            potok: Potok = session.query(Potok).get(potok_id)  # type: ignore
+            potok: Potok = session.get(Potok, potok_id)  # type: ignore
             if potok:
                 for uid, name in people:
-                    student = session.query(Student).filter(
-                        Student.id == uid
-                    ).one_or_none() or Student(id=uid, name=name)
+                    student = session.get(Student, uid) or Student(id=uid, name=name)
                     potok.students.add(student)
         return people
 
@@ -401,7 +399,7 @@ class API:
             else:
                 current_tag = current_tag.select_one("tr")
         with Session.begin() as session:
-            potok = session.query(Potok).get(potok_id)
+            potok = session.get(Potok, potok_id)
             if potok:
                 for entry in schedule:
                     if session.query(ScheduleEntry).filter_by(potok_id=potok_id, **entry).one_or_none():

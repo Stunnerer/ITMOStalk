@@ -32,7 +32,7 @@ def set_group_list(groups: dict):
 
 def get_group_people(group_id):
     with Session.begin() as session:
-        group = session.query(Group).filter(Group.id == group_id).one_or_none()
+        group = session.get(Group, group_id)
         if not group:
             return None
         return [(s.id, s.name) for s in list(group.students.order_by(Student.name))]
@@ -70,7 +70,7 @@ def set_potok_list(potoks: dict[str, list[tuple[str, int]]]):
     with Session.begin() as session:
         for discipline, potok_list in potoks.items():
             for potok_name, potok_id in potok_list:
-                potok = session.query(Potok).get(potok_id)
+                potok = session.get(Potok, potok_id)
                 if potok:
                     potok.set(name=potok_name, discipline=discipline)
                 else:
@@ -96,7 +96,7 @@ def get_parsed_potoks() -> list[tuple[str, str]]:
 
 def get_potok_schedule(potok_id):
     with Session.begin() as session:
-        potok = session.query(Potok).get(potok_id)
+        potok = session.get(Potok, potok_id)
         if not potok:
             return None
         return sorted(
@@ -116,7 +116,7 @@ def get_potok_schedule(potok_id):
 
 def get_student_schedule(student_id, day: date):
     with Session.begin() as session:
-        student = session.query(Student).get(student_id)
+        student = session.get(Student, student_id)
         if not student:
             return []
         return sorted(
