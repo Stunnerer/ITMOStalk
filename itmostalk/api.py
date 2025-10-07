@@ -70,10 +70,9 @@ class API:
 
         # get auth page
         resp = await client.get(
-            "https://isu.ifmo.ru/pls/apex/f?p=2143:1:", headers=self.headers
+            "https://id.itmo.ru/auth/realms/itmo/protocol/openid-connect/auth?response_type=code&scope=openid&client_id=isu&redirect_uri=https://isu.ifmo.ru/api/sso/v1/public/login?apex_params=p=2143:LOGIN:", 
+            headers=self.headers
         )
-        cookies.update(resp.cookies)
-        resp = await client.get(resp.headers["Location"], follow_redirects=True)
         cookies.update(resp.cookies)
 
         # find auth link
@@ -88,6 +87,13 @@ class API:
         client = self.client
         cookies = client.cookies
 
+        if self.authorized:
+            try:
+                if await self.check_auth():
+                    return {"success": True}
+            except httpx.ConnectError:
+                return {"success": False, "message": "Got banned. Use VPN or wait 5-10 minutes."}
+        
         if "auth" not in self.links:
             raise RuntimeError("Auth link should be loaded first")
         auth_link = self.links["auth"]
@@ -110,6 +116,7 @@ class API:
                 cookies.update(resp.cookies)
                 await asyncio.sleep(0.5)
                 while resp.status_code == 302:
+                    await resp.aread()
                     req = client._build_redirect_request(req, resp)
                     resp = await client.send(req)
                     cookies.update(resp.cookies)
@@ -131,6 +138,7 @@ class API:
         resp = await client.get(
             "https://isu.ifmo.ru/", headers=self.headers, follow_redirects=True
         )
+        await resp.aread()
         self._count = 0
         nonce = int(resp.request.url.query.decode().rstrip(":").rsplit(":")[-1])
         await self._update_links(nonce)
