@@ -1,6 +1,6 @@
-textual
-httpx
-bs4
-pytz
-faker
-sqlalchemy
+textual==6.2.1
+httpx==0.28.1
+bs4==0.0.2
+pytz==2025.2
+Faker==37.8.0
+SQLAlchemy==2.0.43
