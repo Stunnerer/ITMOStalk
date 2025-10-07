@@ -1,6 +1,5 @@
 textual
 httpx
-pony
 bs4
 pytz
 faker
