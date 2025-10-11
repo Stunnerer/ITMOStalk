@@ -210,7 +210,7 @@ class SetupScreen(Screen):
         with cache.Session.begin() as session:
             info = session.query(cache.Info).filter(cache.Info.name == "setup_complete").one_or_none()
             if info:
-                info.update({"value": "true"})
+                info.value = "true"
             else:
                 session.add(cache.Info(name="setup_complete", value="true"))
         self.ready[3] = True
