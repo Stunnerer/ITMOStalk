@@ -350,6 +350,10 @@ class API:
                             text = td.getText(strip=True)
                             time_segments = re.findall(r"(\d{1,2}:\d{2})", text)
                             # self.logger.debug("potok_schedule text: %s, segments: %s", text, time_segments)
+                            if not time_segments or len(time_segments) != 2:
+                                self.logger.warning("Unexpected time format in potok_schedule: %s", text)
+                                current_tag = current_tag.find_next_sibling()
+                                continue
                             start = (
                                 datetime.datetime.strptime(time_segments[0], "%H:%M")
                                 .replace(tzinfo=pytz.timezone("Europe/Moscow"))
