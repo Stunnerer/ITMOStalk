@@ -45,7 +45,7 @@ class API:
             }
         else:
             self.headers = headers
-        self.client = httpx.AsyncClient(headers=self.headers)
+        self.client = httpx.AsyncClient(headers=self.headers, trust_env=False)
 
     async def save_cookies(self):
         with open("data/cookies.pk", "wb") as f:
